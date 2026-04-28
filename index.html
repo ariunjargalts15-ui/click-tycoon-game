@@ -5536,7 +5536,6 @@ function showTierUpCelebration(tier) {
 
 const Auth = {
   currentUser: null,
-  window.Auth = Auth;
   syncInterval: null,
   unsubscribe: null,
   isSyncing: false,
@@ -5704,7 +5703,7 @@ const Auth = {
     }, 30000);
   }
 };
-
+window.Auth = Auth;
 function updateSyncIndicator(status) {
   const el = document.getElementById('syncIndicator');
   if (!el) return;
