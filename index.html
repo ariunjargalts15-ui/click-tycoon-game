@@ -5105,10 +5105,16 @@ function openPayPalCheckout(packId) {
   }
 
   // Check if PayPal is configured
-  if (window.PAYPAL_CLIENT_ID === 'YOUR_PAYPAL_LIVE_CLIENT_ID' || !window.PAYPAL_CLIENT_ID) {
-    showPackFail('Payment not yet configured. Please try again later.');
-    return;
-  }
+ if (
+  !window.PAYPAL_CLIENT_ID ||
+  window.PAYPAL_CLIENT_ID === 'YOUR_PAYPAL_LIVE_CLIENT_ID' ||
+  !window.BACKEND_URL
+) {
+  console.log("PAYPAL_CLIENT_ID:", window.PAYPAL_CLIENT_ID);
+  console.log("BACKEND_URL:", window.BACKEND_URL);
+  showPackFail('Payment not configured. Check PayPal Client ID and Backend URL.');
+  return;
+}
 
   _paypalPackId = packId;
   document.getElementById('paypalTitle').textContent    = pack.name;
