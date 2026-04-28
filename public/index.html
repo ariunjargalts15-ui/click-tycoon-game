@@ -4932,6 +4932,7 @@ function applyStarterPack() {
 
 function applyLegendPack() {
   if (STATE.legendPackPurchased) return false;
+  applyStarterPack();
   STATE.legendPackPurchased = true;
   STATE.packType = 'legend';
 
