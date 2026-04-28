@@ -5811,8 +5811,6 @@ function onUserSignedOut() {
 // =================================================================
 // AUTH MODAL UI
 // =================================================================
-let authMode = 'signin'; // 'signin' | 'signup'
-
 function openAuthModal() {
   document.getElementById('modalAuth').classList.add('active');
   renderAuthModal();
@@ -5879,57 +5877,23 @@ function renderAuthModal() {
     return;
   }
 
-  // Not configured warning
-  const configWarning = !Auth.isReady() ? `
-    <div class="auth-config-warning">
-      ⚠️ <strong>Firebase not configured.</strong> Add your Firebase project config in the HTML
-      to enable cloud save and account features. Right now, progress saves locally only —
-      you'll lose your progress if you clear your browser data or switch devices.
-    </div>
-  ` : '';
-
   c.innerHTML = `
-    ${configWarning}
-    <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 12px; text-align: center;">
-      Sign in to save your empire across devices and protect your purchases.
-    </p>
-    <div class="auth-tab-row">
-      <button class="auth-tab ${authMode === 'signin' ? 'active' : ''}" data-auth-tab="signin">Sign In</button>
-      <button class="auth-tab ${authMode === 'signup' ? 'active' : ''}" data-auth-tab="signup">Sign Up</button>
+    <div style="text-align:center; padding: 8px 0 20px;">
+      <div style="font-size: 52px; margin-bottom: 10px;">👑</div>
+      <h3 style="font-family: var(--display); font-size: 22px; color: var(--gold); margin-bottom: 8px;">SIGN IN TO SAVE</h3>
+      <p style="color: rgba(255,255,255,0.65); font-size: 13px; line-height: 1.5;">
+        Sign in with Google to save your empire across all devices and protect your purchases.
+      </p>
     </div>
     <div class="auth-error" id="authError"></div>
-    <div class="auth-form">
-      <input type="email" id="authEmail" class="auth-input" placeholder="Email" autocomplete="email">
-      <input type="password" id="authPassword" class="auth-input" placeholder="Password (6+ characters)" autocomplete="${authMode === 'signin' ? 'current-password' : 'new-password'}">
-      <button class="auth-submit" id="btnAuthSubmit" ${!Auth.isReady() ? 'disabled' : ''}>
-        ${authMode === 'signin' ? 'SIGN IN' : 'CREATE ACCOUNT'}
-      </button>
-      ${authMode === 'signin' ? '<button class="auth-link" id="btnForgot">Forgot password?</button>' : ''}
-    </div>
-    <div class="auth-divider">OR</div>
-    <button class="auth-google" id="btnGoogle" ${!Auth.isReady() ? 'disabled' : ''}>
-      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5h-1.9V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.5-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.3 2.4-5.2 0-9.6-3.3-11.2-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5h-1.9V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6.2 5.2C40.7 35.9 44 30.5 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+    <button class="auth-google" id="btnGoogle" style="width:100%; justify-content:center; padding:14px 20px; font-size:15px;" ${!Auth.isReady() ? 'disabled' : ''}>
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5h-1.9V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.5-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.3 2.4-5.2 0-9.6-3.3-11.2-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5h-1.9V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6.2 5.2C40.7 35.9 44 30.5 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
       Continue with Google
     </button>
   `;
 
-  // Wire up
-  document.querySelectorAll('[data-auth-tab]').forEach(b => {
-    b.onclick = () => { authMode = b.dataset.authTab; renderAuthModal(); };
-  });
-
-  const submitBtn = document.getElementById('btnAuthSubmit');
-  if (submitBtn) submitBtn.onclick = handleAuthSubmit;
-
   const googleBtn = document.getElementById('btnGoogle');
   if (googleBtn) googleBtn.onclick = handleGoogleSignIn;
-
-  const forgotBtn = document.getElementById('btnForgot');
-  if (forgotBtn) forgotBtn.onclick = handleForgotPassword;
-
-  // Submit on Enter
-  const passInput = document.getElementById('authPassword');
-  if (passInput) passInput.onkeypress = e => { if (e.key === 'Enter') handleAuthSubmit(); };
 }
 
 function showAuthError(msg) {
@@ -5941,56 +5905,31 @@ function clearAuthError() {
   if (e) e.classList.remove('show');
 }
 
-async function handleAuthSubmit() {
-  clearAuthError();
-  const email = document.getElementById('authEmail').value.trim();
-  const password = document.getElementById('authPassword').value;
-  if (!email || !password) { showAuthError('Email and password required'); return; }
-  if (password.length < 6) { showAuthError('Password must be 6+ characters'); return; }
-  const btn = document.getElementById('btnAuthSubmit');
-  btn.disabled = true;
-  btn.textContent = authMode === 'signin' ? 'Signing in...' : 'Creating account...';
-  try {
-    if (authMode === 'signin') {
-      await Auth.signIn(email, password);
-    } else {
-      await Auth.signUp(email, password);
-    }
-    // onAuthStateChanged will handle the rest
-  } catch(e) {
-    let msg = e.message || 'Authentication failed';
-    if (msg.includes('user-not-found')) msg = 'No account found with that email';
-    else if (msg.includes('wrong-password')) msg = 'Incorrect password';
-    else if (msg.includes('email-already-in-use')) msg = 'An account with this email already exists';
-    else if (msg.includes('invalid-email')) msg = 'Invalid email address';
-    else if (msg.includes('weak-password')) msg = 'Password is too weak';
-    else if (msg.includes('network')) msg = 'Network error. Check your connection.';
-    else if (msg.includes('Firebase not configured')) msg = 'Cloud save not configured. Playing locally.';
-    showAuthError(msg);
-    btn.disabled = false;
-    btn.textContent = authMode === 'signin' ? 'SIGN IN' : 'CREATE ACCOUNT';
-  }
-}
-
 async function handleGoogleSignIn() {
   clearAuthError();
-  try { await Auth.signInGoogle(); }
-  catch(e) {
-    let msg = e.message || 'Google sign-in failed';
-    if (msg.includes('popup-closed-by-user')) return; // silent on cancel
-    if (msg.includes('popup-blocked')) msg = 'Popup blocked. Allow popups and try again.';
-    showAuthError(msg);
-  }
-}
-
-async function handleForgotPassword() {
-  const email = document.getElementById('authEmail').value.trim();
-  if (!email) { showAuthError('Enter your email first, then click Forgot'); return; }
+  const btn = document.getElementById('btnGoogle');
+  const originalHTML = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⟲ Signing in...'; }
   try {
-    await Auth.resetPassword(email);
-    toast('Password reset email sent!', '📧');
-    clearAuthError();
-  } catch(e) { showAuthError(e.message); }
+    const user = await Auth.signInGoogle();
+    if (user === null) return; // redirect started — page is navigating away
+  } catch(e) {
+    const code = e.code || '';
+    let msg = '';
+    if (code === 'auth/popup-closed-by-user') {
+      // user cancelled — silent
+    } else if (code === 'auth/unauthorized-domain') {
+      msg = 'Domain not authorized. Add your Vercel URL to Firebase → Authentication → Authorized domains.';
+    } else if (code === 'auth/popup-blocked') {
+      msg = 'Popup blocked — trying redirect instead...';
+      return;
+    } else {
+      msg = (e.message || 'Google sign-in failed. Try again.')
+        .replace(/^Firebase: /, '').replace(/ \(auth\/[^)]+\)\.$/, '');
+    }
+    if (msg) showAuthError(msg);
+    if (btn) { btn.disabled = !Auth.isReady(); btn.innerHTML = originalHTML; }
+  }
 }
 
 function updateAuthUI() {
@@ -6372,9 +6311,7 @@ document.querySelectorAll('[data-modal]').forEach(b => {
 
 document.querySelectorAll('[data-close]').forEach(b => {
   b.addEventListener('click', () => {
-    const modal = b.closest('.modal-overlay');
-    if (modal.id === 'modalAuth' && Auth.isReady() && !Auth.currentUser) return;
-    modal.classList.remove('active');
+    b.closest('.modal-overlay').classList.remove('active');
   });
 });
 
@@ -6382,7 +6319,6 @@ document.querySelectorAll('[data-close]').forEach(b => {
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => {
     if (e.target === o && o.id !== 'modalWelcome' && o.id !== 'modalJackpot' && o.id !== 'modalOffline' && o.id !== 'modalPackSuccess' && o.id !== 'modalPackFail') {
-      if (o.id === 'modalAuth' && Auth.isReady() && !Auth.currentUser) return;
       o.classList.remove('active');
     }
   });
