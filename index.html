@@ -5154,8 +5154,8 @@ function _renderPayPalButtons(packId, pack) {
           '<div style="text-align:center;padding:20px;color:#16a34a;font-weight:700;">✓ Payment approved — unlocking…</div>';
         try {
           // Backend verifies + captures + updates Firestore. Never trust client-only.
-          const order = await actions.order.capture();
-          await secureUnlockPack(packId, order.id);
+         const order = await actions.order.capture();
+await secureUnlockPack(packId, data.orderID || order.id);
           document.getElementById('paypalOverlay').classList.remove('active');
         } catch(e) {
           showPackFail('Payment capture failed. Please contact support.');
@@ -5291,7 +5291,11 @@ function renderPacks() {
   c.querySelectorAll('[data-buy]').forEach(b => {
     b.onclick = () => {
       Audio.tap();
-      openPayPalCheckout(b.dataset.buy);
+      if (!window.BACKEND_URL) {
+  showPackFail('Backend URL not configured.');
+  return;
+}
+  openPayPalCheckout(b.dataset.buy);
     };
   });
   document.getElementById('btnRestorePurchases').onclick = restorePurchases;
