@@ -5561,22 +5561,10 @@ const Auth = {
     const provider = new fns.GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
-    // Try popup first (works on desktop and modern mobile).
-    // If the browser blocks the popup (common on iOS Safari), fall back to redirect.
-    try {
-      const cred = await fns.signInWithPopup(window.firebaseAuth, provider);
-      return cred.user;
-    } catch(e) {
-      if (e.code === 'auth/popup-blocked') {
-        // Redirect flow: page navigates away, result is handled in initAuth
-        await fns.signInWithRedirect(window.firebaseAuth, provider);
-        return null;
-      }
-      if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
-        throw new Error('Sign-in was cancelled');
-      }
-      throw e;
-    }
+    // Always redirect — works on all browsers/devices including iOS Safari.
+    // (Popup requires a synchronous user-gesture context that async handlers break.)
+    await fns.signInWithRedirect(window.firebaseAuth, provider);
+    return null;
   },
 
   async resetPassword(email) {
@@ -5922,11 +5910,10 @@ async function handleGoogleSignIn() {
     }
   }
 
-  if (btn) btn.textContent = '⟲ Opening Google...';
+  if (btn) btn.textContent = '⟲ Redirecting to Google...';
   try {
     await Auth.signInGoogle();
-    // Popup path: user signed in — onAuthStateChanged will handle the rest.
-    // Redirect path: page navigates away, so code below never runs.
+    // Page navigates away — code below never runs on success.
   } catch(e) {
     const msg = (e.message || 'Sign-in failed. Try again.')
       .replace(/^Firebase: /, '').replace(/ \(auth\/[^)]+\)\.$/, '');
@@ -5962,22 +5949,22 @@ function initAuth() {
   let redirectDone = false;
   let authStateDone = false;
 
-  const maybeOpenModal = () => {
+  const maybeSetOffline = () => {
     if (redirectDone && authStateDone && !Auth.currentUser) {
       onUserSignedOut();
-      openAuthModal();
+      // Don't auto-open the modal — user opens it themselves via the account button.
     }
   };
 
   // Always call getRedirectResult — it completes any in-progress redirect sign-in.
   window.firebaseFns.getRedirectResult(window.firebaseAuth)
-    .then(() => { redirectDone = true; maybeOpenModal(); })
+    .then(() => { redirectDone = true; maybeSetOffline(); })
     .catch(e => {
       redirectDone = true;
       if ((e.code || '').includes('unauthorized-domain')) {
         toast('Add your site URL to Firebase Auth → Authorized domains', '❌');
       }
-      maybeOpenModal();
+      maybeSetOffline();
     });
 
   window.firebaseFns.onAuthStateChanged(window.firebaseAuth, (user) => {
@@ -5986,7 +5973,7 @@ function initAuth() {
       onUserSignedIn(user);
     } else {
       authStateDone = true;
-      maybeOpenModal();
+      maybeSetOffline();
     }
   });
 }
