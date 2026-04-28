@@ -5812,8 +5812,14 @@ function onUserSignedOut() {
   STATE.email = null;
   if (Auth.unsubscribe) { Auth.unsubscribe(); Auth.unsubscribe = null; }
   if (Auth.syncInterval) { clearInterval(Auth.syncInterval); Auth.syncInterval = null; }
+   localStorage.removeItem(SAVE_KEY);
+  Object.assign(STATE, getDefaultState());
   updateAuthUI();
+  updateHUD();
+  renderPacks();
+  updateBoostIndicator();
   updateSyncIndicator('offline');
+  location.reload();
 }
 
 // =================================================================
