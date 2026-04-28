@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Tap Tycoon" />
 <title>TAP TYCOON — One Click Empire</title>
 <link rel="manifest" href="/manifest.json" />
+<script defer src="/_vercel/insights/script.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
@@ -5565,21 +5566,10 @@ const Auth = {
     const provider = new fns.GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-      await fns.signInWithRedirect(window.firebaseAuth, provider);
-      return null;
-    }
-    try {
-      const cred = await fns.signInWithPopup(window.firebaseAuth, provider);
-      return cred.user;
-    } catch(e) {
-      if (e.code === 'auth/popup-blocked') {
-        await fns.signInWithRedirect(window.firebaseAuth, provider);
-        return null;
-      }
-      throw e;
-    }
+    // Always use redirect — works on all devices, no popup-blocking issues
+    sessionStorage.setItem('pendingGoogleRedirect', '1');
+    await fns.signInWithRedirect(window.firebaseAuth, provider);
+    return null;
   },
 
   async resetPassword(email) {
@@ -5664,7 +5654,8 @@ const Auth = {
           if (u[k] !== undefined) cloudData[k] = u[k];
         });
       }
-      return cloudData;
+      // Return null for new users (no documents yet) so saveProgress() initialises their record
+      return Object.keys(cloudData).length > 0 ? cloudData : null;
     } catch(e) {
       console.warn('Cloud load failed:', e);
       return null;
@@ -5908,27 +5899,14 @@ function clearAuthError() {
 async function handleGoogleSignIn() {
   clearAuthError();
   const btn = document.getElementById('btnGoogle');
-  const originalHTML = btn ? btn.innerHTML : '';
-  if (btn) { btn.disabled = true; btn.textContent = '⟲ Signing in...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⟲ Redirecting to Google...'; }
   try {
-    const user = await Auth.signInGoogle();
-    if (user === null) return; // redirect started — page is navigating away
+    await Auth.signInGoogle(); // always uses redirect — page navigates away
   } catch(e) {
-    const code = e.code || '';
-    let msg = '';
-    if (code === 'auth/popup-closed-by-user') {
-      // user cancelled — silent
-    } else if (code === 'auth/unauthorized-domain') {
-      msg = 'Domain not authorized. Add your Vercel URL to Firebase → Authentication → Authorized domains.';
-    } else if (code === 'auth/popup-blocked') {
-      msg = 'Popup blocked — trying redirect instead...';
-      return;
-    } else {
-      msg = (e.message || 'Google sign-in failed. Try again.')
-        .replace(/^Firebase: /, '').replace(/ \(auth\/[^)]+\)\.$/, '');
-    }
-    if (msg) showAuthError(msg);
-    if (btn) { btn.disabled = !Auth.isReady(); btn.innerHTML = originalHTML; }
+    const msg = (e.message || 'Sign-in failed. Try again.')
+      .replace(/^Firebase: /, '').replace(/ \(auth\/[^)]+\)\.$/, '');
+    showAuthError(msg);
+    if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
   }
 }
 
@@ -5952,14 +5930,30 @@ function initAuth() {
     updateSyncIndicator('offline');
     return;
   }
-  // Handle Google redirect result (mobile sign-in flow returns here)
-  window.firebaseFns.getRedirectResult(window.firebaseAuth).catch(() => {});
+
+  // If we just came back from a Google redirect, block the modal until
+  // Firebase processes the result (prevents the "modal flashes then closes" bug)
+  const pendingRedirect = !!sessionStorage.getItem('pendingGoogleRedirect');
+  if (pendingRedirect) sessionStorage.removeItem('pendingGoogleRedirect');
+  let redirectBlocking = pendingRedirect;
+
+  // Process the redirect result — completes the sign-in after page reload
+  window.firebaseFns.getRedirectResult(window.firebaseAuth)
+    .then(() => { redirectBlocking = false; })
+    .catch(e => {
+      redirectBlocking = false;
+      if ((e.code || '').includes('unauthorized-domain')) {
+        toast('Add your site URL to Firebase Auth → Authorized domains', '❌');
+      }
+      if (!Auth.currentUser) { onUserSignedOut(); openAuthModal(); }
+    });
+
   window.firebaseFns.onAuthStateChanged(window.firebaseAuth, (user) => {
     if (user) {
+      redirectBlocking = false;
       onUserSignedIn(user);
     } else {
-      onUserSignedOut();
-      openAuthModal();
+      if (!redirectBlocking) { onUserSignedOut(); openAuthModal(); }
     }
   });
 }
