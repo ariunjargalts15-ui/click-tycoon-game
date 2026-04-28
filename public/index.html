@@ -5556,8 +5556,7 @@ const Auth = {
   },
 
   signInGoogle() {
-    // NOT async — returns a Promise so the popup call is synchronous from the click handler,
-    // which is required for iOS Safari to allow the popup window.
+    // NOT async — popup must be called synchronously from the click handler (iOS Safari).
     if (!this.isReady()) return Promise.reject(new Error('Firebase not configured'));
     const fns = window.firebaseFns;
     const provider = new fns.GoogleAuthProvider();
@@ -5566,14 +5565,14 @@ const Auth = {
     return fns.signInWithPopup(window.firebaseAuth, provider)
       .then(cred => cred.user)
       .catch(e => {
-        if (e.code === 'auth/popup-blocked') {
-          // Browser blocked the popup (some mobile browsers) — fall back to redirect
-          return fns.signInWithRedirect(window.firebaseAuth, provider).then(() => null);
-        }
+        // User explicitly cancelled — surface that, don't redirect
         if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
           throw new Error('Sign-in was cancelled');
         }
-        throw e;
+        // Any other popup failure (blocked, internal error, unsupported env, etc.)
+        // → fall back to redirect, which works on all browsers
+        console.warn('[Auth] Popup failed (' + (e.code || e.message) + '), falling back to redirect');
+        return fns.signInWithRedirect(window.firebaseAuth, provider).then(() => null);
       });
   },
 
@@ -5975,7 +5974,6 @@ function initAuth() {
     .then(result => {
       redirectDone = true;
       if (result && result.user) {
-        // redirect sign-in succeeded — onAuthStateChanged will fire next
         console.log('[Auth] Redirect sign-in completed for', result.user.email);
       }
       maybeSetOffline();
@@ -5984,11 +5982,12 @@ function initAuth() {
       redirectDone = true;
       console.error('[Auth] getRedirectResult error:', e.code, e.message);
       const code = e.code || '';
+      const domain = location.hostname;
       if (code.includes('unauthorized-domain')) {
-        toast('Sign-in blocked: add this site to Firebase Auth → Authorized domains', '❌');
+        // This is the most common deployment error — tell user exactly what to add
+        toast('Add "' + domain + '" to Firebase Console → Auth → Authorized domains', '❌');
       } else if (code && code !== 'auth/null-user') {
-        // Show any real error so it's visible and reportable
-        toast('Sign-in failed: ' + (e.message || code), '❌');
+        toast('Sign-in error: ' + (e.code || e.message), '❌');
       }
       maybeSetOffline();
     });
