@@ -1,0 +1,11 @@
+{
+  "name": "tap-tycoon",
+  "version": "1.0.0",
+  "description": "Tap Tycoon — One Click Idle Game",
+  "private": true,
+  "scripts": {
+    "start":      "cd server && node index.js",
+    "dev":        "cd server && node --watch index.js",
+    "install:all":"cd server && npm install"
+  }
+}

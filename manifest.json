@@ -1,0 +1,14 @@
+{
+  "name": "Tap Tycoon",
+  "short_name": "Tap Tycoon",
+  "description": "One Click Idle Empire — tap your way to fortune",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a0b2e",
+  "theme_color": "#ffd23f",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
