@@ -5156,6 +5156,7 @@ function _renderPayPalButtons(packId, pack) {
           await secureUnlockPack(packId, data.orderID || order.id);
           document.getElementById('paypalOverlay').classList.remove('active');
         } catch(e) {
+          console.error("PayPal error:", e); 
           showPackFail('Payment capture failed. Please contact support.');
           document.getElementById('paypalOverlay').classList.remove('active');
         }
