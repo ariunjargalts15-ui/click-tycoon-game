@@ -57,6 +57,26 @@
       window.FIREBASE_READY = true;
       // Notify the app when Firebase is ready
       window.dispatchEvent(new CustomEvent('firebase-ready'));
+window.addEventListener('firebase-ready', async () => {
+  try {
+    await window.firebaseFns.getRedirectResult(window.firebaseAuth);
+  } catch (e) {
+    console.log(e);
+  }
+
+  window.firebaseFns.onAuthStateChanged(window.firebaseAuth, (user) => {
+    if (user) {
+      Auth.currentUser = user;
+      renderAuthModal();
+
+      const modal = document.getElementById('modalAuth');
+      if (modal) modal.classList.remove('active');
+    } else {
+      Auth.currentUser = null;
+      renderAuthModal();
+    }
+  });
+});
     } catch(e) {
       console.warn('Firebase failed to load:', e);
       window.FIREBASE_READY = false;
