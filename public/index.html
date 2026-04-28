@@ -5153,7 +5153,7 @@ function _renderPayPalButtons(packId, pack) {
         try {
           // Backend verifies + captures + updates Firestore. Never trust client-only.
           const order = await actions.order.capture();
-          await secureUnlockPack(packId, order.id);
+          await secureUnlockPack(packId, data.orderID || order.id);
           document.getElementById('paypalOverlay').classList.remove('active');
         } catch(e) {
           showPackFail('Payment capture failed. Please contact support.');
