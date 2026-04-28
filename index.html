@@ -6500,7 +6500,9 @@ init();
   window.firebaseFns.getRedirectResult(window.firebaseAuth).catch(console.log);
 
   window.firebaseFns.onAuthStateChanged(window.firebaseAuth, async (user) => {
-    window.Auth.currentUser = user || null;
+  window.Auth = window.Auth || {};
+  window.Auth.currentUser = user || null;
+  console.log("✅ Logged in user:", user);
 
     if (typeof renderAuthModal === 'function') renderAuthModal();
 
