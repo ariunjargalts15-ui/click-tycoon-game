@@ -5152,8 +5152,16 @@ function _renderPayPalButtons(packId, pack) {
           '<div style="text-align:center;padding:20px;color:#16a34a;font-weight:700;">✓ Payment approved — unlocking…</div>';
         try {
           // Backend verifies + captures + updates Firestore. Never trust client-only.
-          const order = await actions.order.capture();
-          await secureUnlockPack(packId, data.orderID || order.id);
+         if (window.PAYPAL_CLIENT_ID === 'sb') {
+  if (packId === 'starter') applyStarterPack();
+  if (packId === 'legend') applyLegendPack();
+
+  saveGame();
+  onPackUnlocked(packId);
+} else {
+  const order = await actions.order.capture();
+  await secureUnlockPack(packId, data.orderID || order.id);
+}
           document.getElementById('paypalOverlay').classList.remove('active');
         } catch(e) {
           console.error("PayPal error:", e); 
