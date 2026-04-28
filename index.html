@@ -6499,15 +6499,32 @@ init();
 
   window.firebaseFns.getRedirectResult(window.firebaseAuth).catch(console.log);
 
-  window.firebaseFns.onAuthStateChanged(window.firebaseAuth, (user) => {
+  window.firebaseFns.onAuthStateChanged(window.firebaseAuth, async (user) => {
     window.Auth.currentUser = user || null;
 
     if (typeof renderAuthModal === 'function') renderAuthModal();
 
-    if (user) {
-      const modal = document.getElementById('modalAuth');
-      if (modal) modal.classList.remove('active');
-      if (typeof toast === 'function') toast('Signed in successfully!', '✅');
+   if (user) {
+  window.Auth.currentUser = user;
+
+  await window.firebaseFns.setDoc(
+    window.firebaseFns.doc(window.firebaseDB, "users", user.uid),
+    {
+      uid: user.uid,
+      email: user.email || "",
+      name: user.displayName || "",
+      photoURL: user.photoURL || "",
+      provider: "google",
+      lastLoginAt: window.firebaseFns.serverTimestamp(),
+      createdAt: window.firebaseFns.serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  const modal = document.getElementById('modalAuth');
+  if (modal) modal.classList.remove('active');
+  if (typeof toast === 'function') toast('Signed in successfully!', '✅');
+}
     }
   });
 })();
