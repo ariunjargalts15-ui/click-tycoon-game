@@ -5555,16 +5555,26 @@ const Auth = {
     return cred.user;
   },
 
-  async signInGoogle() {
-    if (!this.isReady()) throw new Error('Firebase not configured');
+  signInGoogle() {
+    // NOT async — returns a Promise so the popup call is synchronous from the click handler,
+    // which is required for iOS Safari to allow the popup window.
+    if (!this.isReady()) return Promise.reject(new Error('Firebase not configured'));
     const fns = window.firebaseFns;
     const provider = new fns.GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
-    // Always redirect — works on all browsers/devices including iOS Safari.
-    // (Popup requires a synchronous user-gesture context that async handlers break.)
-    await fns.signInWithRedirect(window.firebaseAuth, provider);
-    return null;
+    return fns.signInWithPopup(window.firebaseAuth, provider)
+      .then(cred => cred.user)
+      .catch(e => {
+        if (e.code === 'auth/popup-blocked') {
+          // Browser blocked the popup (some mobile browsers) — fall back to redirect
+          return fns.signInWithRedirect(window.firebaseAuth, provider).then(() => null);
+        }
+        if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+          throw new Error('Sign-in was cancelled');
+        }
+        throw e;
+      });
   },
 
   async resetPassword(email) {
@@ -5891,35 +5901,39 @@ function clearAuthError() {
   if (e) e.classList.remove('show');
 }
 
-async function handleGoogleSignIn() {
+function handleGoogleSignIn() {
+  // NOT async — iOS Safari only allows popups from synchronous user-gesture handlers.
   clearAuthError();
   const btn = document.getElementById('btnGoogle');
-  if (btn) { btn.disabled = true; btn.textContent = '⟲ Connecting...'; }
 
-  // Wait up to 8 s for Firebase to finish loading (handles slow mobile connections)
   if (!Auth.isReady()) {
-    const ready = await new Promise(res => {
-      if (window.FIREBASE_READY) { res(true); return; }
-      const t = setTimeout(() => res(false), 8000);
-      window.addEventListener('firebase-ready', () => { clearTimeout(t); res(true); }, { once: true });
-    });
-    if (!ready) {
-      showAuthError('No connection — check your internet and try again.');
+    // Firebase still loading — show feedback and retry once it's ready
+    if (btn) { btn.disabled = true; btn.textContent = '⟲ Loading...'; }
+    const t = setTimeout(() => {
       if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
-      return;
-    }
+      showAuthError('Connection timed out — please try again.');
+    }, 8000);
+    window.addEventListener('firebase-ready', () => {
+      clearTimeout(t);
+      if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
+    }, { once: true });
+    return;
   }
 
-  if (btn) btn.textContent = '⟲ Redirecting to Google...';
-  try {
-    await Auth.signInGoogle();
-    // Page navigates away — code below never runs on success.
-  } catch(e) {
-    const msg = (e.message || 'Sign-in failed. Try again.')
-      .replace(/^Firebase: /, '').replace(/ \(auth\/[^)]+\)\.$/, '');
-    showAuthError(msg);
-    if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
-  }
+  if (btn) { btn.disabled = true; btn.textContent = '⟲ Opening Google...'; }
+
+  // Synchronous call from click handler — user-gesture context intact for popup
+  Auth.signInGoogle()
+    .then(user => {
+      if (!user) return; // redirect path — page is navigating away
+      // popup path: onAuthStateChanged fires and calls onUserSignedIn automatically
+    })
+    .catch(e => {
+      const msg = (e.message || 'Sign-in failed. Try again.')
+        .replace(/^Firebase: /, '').replace(/ \(auth\/[^)]+\)\.$/, '');
+      showAuthError(msg);
+      if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
+    });
 }
 
 function updateAuthUI() {
@@ -5958,11 +5972,23 @@ function initAuth() {
 
   // Always call getRedirectResult — it completes any in-progress redirect sign-in.
   window.firebaseFns.getRedirectResult(window.firebaseAuth)
-    .then(() => { redirectDone = true; maybeSetOffline(); })
+    .then(result => {
+      redirectDone = true;
+      if (result && result.user) {
+        // redirect sign-in succeeded — onAuthStateChanged will fire next
+        console.log('[Auth] Redirect sign-in completed for', result.user.email);
+      }
+      maybeSetOffline();
+    })
     .catch(e => {
       redirectDone = true;
-      if ((e.code || '').includes('unauthorized-domain')) {
-        toast('Add your site URL to Firebase Auth → Authorized domains', '❌');
+      console.error('[Auth] getRedirectResult error:', e.code, e.message);
+      const code = e.code || '';
+      if (code.includes('unauthorized-domain')) {
+        toast('Sign-in blocked: add this site to Firebase Auth → Authorized domains', '❌');
+      } else if (code && code !== 'auth/null-user') {
+        // Show any real error so it's visible and reportable
+        toast('Sign-in failed: ' + (e.message || code), '❌');
       }
       maybeSetOffline();
     });
@@ -5970,9 +5996,11 @@ function initAuth() {
   window.firebaseFns.onAuthStateChanged(window.firebaseAuth, (user) => {
     if (user) {
       authStateDone = true;
-      onUserSignedIn(user);
+      console.log('[Auth] onAuthStateChanged: signed in as', user.email);
+      onUserSignedIn(user).catch(err => console.error('[Auth] onUserSignedIn error:', err));
     } else {
       authStateDone = true;
+      console.log('[Auth] onAuthStateChanged: no user');
       maybeSetOffline();
     }
   });
