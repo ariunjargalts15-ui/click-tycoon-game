@@ -3648,6 +3648,21 @@ const STATE = {
   email: null
 };
 
+const SAVE_KEY = 'tapTycoon';
+const DEFAULT_STATE = JSON.parse(JSON.stringify(STATE));
+
+function getDefaultState() {
+  const state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  state.lastSeen = Date.now();
+  state.goldenButtonNext = Date.now() + 30000 + Math.random() * 60000;
+  return state;
+}
+
+function replaceState(nextState) {
+  Object.keys(STATE).forEach(key => delete STATE[key]);
+  Object.assign(STATE, nextState);
+}
+
 // ---------- DEFINITIONS ----------
 const UPGRADES = [
   { id: 'clickPower', name: 'Bigger Tap', icon: '👊', desc: '+1 coin per tap', baseCost: 15, growth: 1.15, effect: lvl => `+${lvl} per tap` },
@@ -3847,6 +3862,85 @@ const THEMES = [
     particle: 'sparks', buttonStyle: 'magma',
     desc: 'Lava world & magma button' }
 ];
+
+const PACK_FIELD_KEYS = [
+  'packType',
+  'starterPackPurchased',
+  'legendPackPurchased',
+  'starterBoostUntil',
+  'adsRemovedUntil',
+  'permanentAdsRemoved',
+  'tapIncomeMultiplier',
+  'autoIncomeMultiplier',
+  'offlineEarningLimitHours',
+  'bonusWheelSpins',
+  'badge',
+  'goldenButtonChanceMult'
+];
+
+const FREE_THEME_IDS = THEMES.filter(t => t.tier === 'free').map(t => t.id);
+const STARTER_THEME_IDS = THEMES.filter(t => t.tier === 'starter').map(t => t.id);
+const LEGEND_THEME_IDS = THEMES.filter(t => t.tier === 'legend').map(t => t.id);
+const STARTER_SKIN_IDS = SKINS.filter(s => s.exclusive === 'starter').map(s => s.id);
+const LEGEND_SKIN_IDS = SKINS.filter(s => s.exclusive === 'legend').map(s => s.id);
+
+function getDefaultPackFields() {
+  const defaults = getDefaultState();
+  return PACK_FIELD_KEYS.reduce((out, key) => {
+    out[key] = defaults[key];
+    return out;
+  }, {});
+}
+
+function sanitizeCloudProgress(data) {
+  const progress = { ...(data || {}) };
+  PACK_FIELD_KEYS.forEach(key => delete progress[key]);
+  delete progress.ownedThemes;
+  return progress;
+}
+
+function addUnique(list, value) {
+  if (!list.includes(value)) list.push(value);
+}
+
+function reconcilePackEntitlements() {
+  const defaults = getDefaultPackFields();
+
+  if (STATE.legendPackPurchased) {
+    STATE.packType = 'legend';
+  } else if (STATE.starterPackPurchased) {
+    STATE.packType = 'starter';
+    STATE.legendPackPurchased = false;
+    STATE.permanentAdsRemoved = defaults.permanentAdsRemoved;
+    STATE.tapIncomeMultiplier = defaults.tapIncomeMultiplier;
+    STATE.autoIncomeMultiplier = defaults.autoIncomeMultiplier;
+    STATE.goldenButtonChanceMult = defaults.goldenButtonChanceMult;
+    if (STATE.badge === 'legend') STATE.badge = 'starter';
+  } else {
+    Object.assign(STATE, defaults);
+  }
+
+  const allowedThemes = [...FREE_THEME_IDS];
+  if (STATE.starterPackPurchased || STATE.legendPackPurchased) allowedThemes.push(...STARTER_THEME_IDS);
+  if (STATE.legendPackPurchased) allowedThemes.push(...LEGEND_THEME_IDS);
+  STATE.ownedThemes = allowedThemes.filter((id, index) => allowedThemes.indexOf(id) === index);
+  if (!STATE.ownedThemes.includes(STATE.equippedTheme)) STATE.equippedTheme = FREE_THEME_IDS[0] || 'default';
+
+  const skinById = new Map(SKINS.map(s => [s.id, s]));
+  const keptSkins = [];
+  (Array.isArray(STATE.ownedSkins) ? STATE.ownedSkins : []).forEach(id => {
+    const skin = skinById.get(id);
+    if (!skin) return;
+    if (!skin.exclusive) addUnique(keptSkins, id);
+    if (skin.exclusive === 'starter' && (STATE.starterPackPurchased || STATE.legendPackPurchased)) addUnique(keptSkins, id);
+    if (skin.exclusive === 'legend' && STATE.legendPackPurchased) addUnique(keptSkins, id);
+  });
+  if (SKINS[0]) addUnique(keptSkins, SKINS[0].id);
+  if (STATE.starterPackPurchased || STATE.legendPackPurchased) STARTER_SKIN_IDS.forEach(id => addUnique(keptSkins, id));
+  if (STATE.legendPackPurchased) LEGEND_SKIN_IDS.forEach(id => addUnique(keptSkins, id));
+  STATE.ownedSkins = keptSkins;
+  if (!STATE.ownedSkins.includes(STATE.equippedSkin)) STATE.equippedSkin = SKINS[0] ? SKINS[0].id : null;
+}
 
 const WHEEL_PRIZES = [
   { label: '+10', amount: 0.1, color: '#ef4444', text: 'white' },
@@ -5005,6 +5099,7 @@ async function secureUnlockPack(packId, orderID) {
       if (!data.success) throw new Error(data.error || 'Payment not verified');
       // Apply state from server (Firestore snapshot listener will also fire)
       Object.assign(STATE, data.userState);
+      reconcilePackEntitlements();
       onPackUnlocked(packId);
       saveGame();
       return true;
@@ -5033,6 +5128,7 @@ async function secureUnlockPack(packId, orderID) {
 }
 
 function onPackUnlocked(packId) {
+  reconcilePackEntitlements();
   const pack = PACKS[packId];
   document.getElementById('packSuccessName').textContent = pack.name + ' UNLOCKED!';
   document.getElementById('packSuccessDesc').textContent = `Pack unlocked successfully! All ${pack.features.length} rewards added to your account.`;
@@ -5042,6 +5138,8 @@ function onPackUnlocked(packId) {
   for (let i = 0; i < 50; i++) setTimeout(() => spawnConfetti(), i * 25);
   // Apply pack-side effects to UI
   applyPackUIEffects();
+  renderPacks();
+  if (typeof renderSkins === 'function') renderSkins();
   updateHUD();
 }
 
@@ -5336,8 +5434,11 @@ async function restorePurchases() {
       const data = await res.json();
       if (data.success) {
         Object.assign(STATE, data.userState || {});
+        reconcilePackEntitlements();
         saveGame();
         renderPacks();
+        if (typeof renderSkins === 'function') renderSkins();
+        applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
         updateHUD();
         updateBoostIndicator();
         toast('Purchases restored!', '✅');
@@ -5353,15 +5454,14 @@ async function restorePurchases() {
   if (Auth.currentUser) {
     const cloud = await Auth.loadFromCloud();
     if (cloud) {
-      ['packType', 'starterPackPurchased', 'legendPackPurchased',
-       'starterBoostUntil', 'adsRemovedUntil', 'permanentAdsRemoved',
-       'tapIncomeMultiplier', 'autoIncomeMultiplier',
-       'offlineEarningLimitHours', 'bonusWheelSpins', 'badge',
-       'goldenButtonChanceMult'].forEach(k => {
+      PACK_FIELD_KEYS.forEach(k => {
         if (cloud[k] !== undefined) STATE[k] = cloud[k];
       });
+      reconcilePackEntitlements();
       saveGame();
       renderPacks();
+      if (typeof renderSkins === 'function') renderSkins();
+      applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
       updateHUD();
       updateBoostIndicator();
     }
@@ -5560,6 +5660,7 @@ const Auth = {
   syncInterval: null,
   unsubscribe: null,
   isSyncing: false,
+  suppressNextSignedOutModal: false,
 
   isReady() { return !!window.FIREBASE_READY; },
 
@@ -5596,9 +5697,11 @@ const Auth = {
 
   async signOut() {
     if (!this.isReady()) return;
+    this.suppressNextSignedOutModal = true;
     if (this.unsubscribe) { this.unsubscribe(); this.unsubscribe = null; }
     if (this.syncInterval) { clearInterval(this.syncInterval); this.syncInterval = null; }
     await window.firebaseFns.signOut(window.firebaseAuth);
+    onUserSignedOut(true);
   },
 
   // Save the player's progress to Firestore (the parts they own client-side)
@@ -5610,6 +5713,7 @@ const Auth = {
       const fns = window.firebaseFns;
       const ref = fns.doc(window.firebaseDB, 'users', this.currentUser.uid, 'progress', 'gameState');
       // Only save the non-sensitive game state — pack/badge fields are server-controlled
+      reconcilePackEntitlements();
       const progress = {
         coins: STATE.coins,
         totalCoins: STATE.totalCoins,
@@ -5625,7 +5729,6 @@ const Auth = {
         upgrades: STATE.upgrades,
         auto: STATE.auto,
         ownedSkins: STATE.ownedSkins,
-        ownedThemes: STATE.ownedThemes,
         equippedSkin: STATE.equippedSkin,
         equippedTheme: STATE.equippedTheme,
         lastSeen: Date.now(),
@@ -5658,21 +5761,16 @@ const Auth = {
       ]);
 
       // Merge: server-controlled pack fields take precedence
-      const cloudData = {};
-      if (progressSnap.exists()) Object.assign(cloudData, progressSnap.data());
+      const cloudData = getDefaultPackFields();
+      if (progressSnap.exists()) Object.assign(cloudData, sanitizeCloudProgress(progressSnap.data()));
       if (userSnap.exists()) {
         const u = userSnap.data();
         // Pack/badge fields are SERVER-CONTROLLED. Always trust the server doc.
-        ['packType', 'starterPackPurchased', 'legendPackPurchased',
-         'starterBoostUntil', 'adsRemovedUntil', 'permanentAdsRemoved',
-         'tapIncomeMultiplier', 'autoIncomeMultiplier',
-         'offlineEarningLimitHours', 'bonusWheelSpins', 'badge',
-         'goldenButtonChanceMult'].forEach(k => {
+        PACK_FIELD_KEYS.forEach(k => {
           if (u[k] !== undefined) cloudData[k] = u[k];
         });
       }
-      // Return null for new users (no documents yet) so saveProgress() initialises their record
-      return Object.keys(cloudData).length > 0 ? cloudData : null;
+      return cloudData;
     } catch(e) {
       console.warn('Cloud load failed:', e);
       return null;
@@ -5690,11 +5788,7 @@ const Auth = {
       const u = snap.data();
       let changed = false;
       // Apply server-side pack fields if changed
-      ['packType', 'starterPackPurchased', 'legendPackPurchased',
-       'starterBoostUntil', 'adsRemovedUntil', 'permanentAdsRemoved',
-       'tapIncomeMultiplier', 'autoIncomeMultiplier',
-       'offlineEarningLimitHours', 'bonusWheelSpins', 'badge',
-       'goldenButtonChanceMult'].forEach(k => {
+      PACK_FIELD_KEYS.forEach(k => {
         if (u[k] !== undefined && JSON.stringify(STATE[k]) !== JSON.stringify(u[k])) {
           STATE[k] = u[k];
           changed = true;
@@ -5708,9 +5802,13 @@ const Auth = {
         changed = true;
       }
       if (changed) {
+        reconcilePackEntitlements();
         updateHUD();
         updateBoostIndicator();
         applyTierVisuals(false);
+        applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
+        renderPacks();
+        if (typeof renderSkins === 'function') renderSkins();
         saveGame();
       }
     });
@@ -5761,22 +5859,14 @@ async function onUserSignedIn(user) {
       toast('Cloud progress restored!', '☁️');
     } else if (localTotal > cloudTotal) {
       // Local is ahead → keep local but inherit pack fields from cloud
-      ['packType', 'starterPackPurchased', 'legendPackPurchased',
-       'starterBoostUntil', 'adsRemovedUntil', 'permanentAdsRemoved',
-       'tapIncomeMultiplier', 'autoIncomeMultiplier',
-       'offlineEarningLimitHours', 'bonusWheelSpins', 'badge',
-       'goldenButtonChanceMult'].forEach(k => {
+      PACK_FIELD_KEYS.forEach(k => {
         if (cloud[k] !== undefined) STATE[k] = cloud[k];
       });
       toast('Local progress kept; packs synced from cloud', '🔄');
       await Auth.saveProgress();
     } else {
       // Equal or cloud empty: just adopt cloud's pack fields
-      ['packType', 'starterPackPurchased', 'legendPackPurchased',
-       'starterBoostUntil', 'adsRemovedUntil', 'permanentAdsRemoved',
-       'tapIncomeMultiplier', 'autoIncomeMultiplier',
-       'offlineEarningLimitHours', 'bonusWheelSpins', 'badge',
-       'goldenButtonChanceMult'].forEach(k => {
+      PACK_FIELD_KEYS.forEach(k => {
         if (cloud[k] !== undefined) STATE[k] = cloud[k];
       });
     }
@@ -5784,6 +5874,8 @@ async function onUserSignedIn(user) {
     // First time login — push current state to cloud
     await Auth.saveProgress();
   }
+
+  reconcilePackEntitlements();
 
   // Re-apply visuals after merge
   const skinObj = SKINS.find(s => s.id === STATE.equippedSkin) || SKINS[0];
@@ -5806,7 +5898,7 @@ async function onUserSignedIn(user) {
   document.getElementById('modalAuth').classList.remove('active');
 }
 
-function onUserSignedOut() {
+function onUserSignedOut(resetLocalState = false) {
 
   Auth.currentUser = null;
   STATE.userId = null;
@@ -5822,23 +5914,29 @@ function onUserSignedOut() {
     Auth.syncInterval = null;
   }
 
+  if (!resetLocalState) {
+    updateAuthUI();
+    updateSyncIndicator('offline');
+    if (document.getElementById('modalAuth').classList.contains('active')) renderAuthModal();
+    return;
+  }
+
   localStorage.removeItem(SAVE_KEY);
   localStorage.removeItem('tapTycoonSave');
   localStorage.removeItem('tap-tycoon-save');
   localStorage.removeItem('purchasedPacks');
   localStorage.removeItem('ownedPacks');
- 
-  Object.assign(STATE, getDefaultState());
 
-  STATE.pack = 'free';
-  STATE.ownedPacks = [];
-  STATE.unlockedSkins = [];
-  STATE.unlockedThemes = [];
-  STATE.currentSkin = null;
-  STATE.currentTheme = null;
-
+  replaceState(getDefaultState());
+  reconcilePackEntitlements();
   saveGame();
-  
+
+  const skinObj = SKINS.find(s => s.id === STATE.equippedSkin) || SKINS[0];
+  document.getElementById('tapFace').textContent = skinObj.id;
+  document.getElementById('tapBtn').style.background = '';
+  applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
+  applyTierVisuals(false);
+
   updateAuthUI();
   updateHUD();
   renderPacks();
@@ -5848,6 +5946,7 @@ function onUserSignedOut() {
 
   updateBoostIndicator();
   updateSyncIndicator('offline');
+  if (document.getElementById('modalAuth').classList.contains('active')) renderAuthModal();
 }
 
 function openAuthModal() {
@@ -5908,7 +6007,7 @@ function renderAuthModal() {
       setTimeout(() => { btn.textContent = '☁️ Sync to Cloud Now'; btn.disabled = false; }, 1500);
     };
     document.getElementById('btnSignOut').onclick = async () => {
-      if (!confirm('Sign out? Your progress will stay on this device.')) return;
+      if (!confirm('Sign out? This device will return to a free guest profile until you sign in again.')) return;
       await Auth.signOut();
       document.getElementById('modalAuth').classList.remove('active');
       toast('Signed out', '👋');
@@ -5993,15 +6092,31 @@ function initAuth() {
       if ((e.code || '').includes('unauthorized-domain')) {
         toast('Add your site URL to Firebase Auth → Authorized domains', '❌');
       }
-      if (!Auth.currentUser) { onUserSignedOut(); openAuthModal(); }
+      if (!Auth.currentUser) { onUserSignedOut(false); openAuthModal(); }
     });
 
   window.firebaseFns.onAuthStateChanged(window.firebaseAuth, (user) => {
     if (user) {
+      Auth.suppressNextSignedOutModal = false;
       redirectBlocking = false;
-      onUserSignedIn(user);
+      onUserSignedIn(user).catch(e => {
+        console.warn('Sign-in sync failed:', e);
+        Auth.currentUser = user;
+        STATE.userId = user.uid;
+        STATE.email = user.email;
+        updateAuthUI();
+        updateSyncIndicator('offline');
+      });
     } else {
-      if (!redirectBlocking) { onUserSignedOut(); openAuthModal(); }
+      if (!redirectBlocking) {
+        const explicitSignOut = Auth.suppressNextSignedOutModal;
+        onUserSignedOut(explicitSignOut);
+        if (explicitSignOut) {
+          Auth.suppressNextSignedOutModal = false;
+        } else {
+          openAuthModal();
+        }
+      }
     }
   });
 }
@@ -6406,7 +6521,7 @@ document.getElementById('btnSound').onclick = (e) => {
 // Reset
 document.getElementById('btnReset').onclick = () => {
   if (!confirm('Reset all progress? This cannot be undone!')) return;
-  localStorage.removeItem('tapTycoon');
+  localStorage.removeItem(SAVE_KEY);
   location.reload();
 };
 
@@ -6426,12 +6541,12 @@ tapBtn.addEventListener('pointerdown', e => {
 
 // ---------- SAVE / LOAD ----------
 function saveGame() {
-  try { localStorage.setItem('tapTycoon', JSON.stringify(STATE)); } catch(e) {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(STATE)); } catch(e) {}
 }
 
 function loadGame() {
   try {
-    const raw = localStorage.getItem('tapTycoon');
+    const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return false;
     const data = JSON.parse(raw);
     Object.assign(STATE, data);
@@ -6449,6 +6564,7 @@ function loadGame() {
     if (!validThemeIds.includes(STATE.equippedTheme)) {
       STATE.equippedTheme = 'default';
     }
+    reconcilePackEntitlements();
     return true;
   } catch(e) { return false; }
 }
@@ -6544,6 +6660,8 @@ init();
 </script>
   <script>
 (function initFirebaseAuthFix() {
+  return;
+  /*
   if (!window.firebaseAuth || !window.firebaseFns || !window.Auth) {
     setTimeout(initFirebaseAuthFix, 300);
     return;
@@ -6581,6 +6699,7 @@ init();
 }
     }
   });
+  */
 })();
 </script>
   
