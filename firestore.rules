@@ -1,0 +1,106 @@
+// ============================================================
+// Tap Tycoon — Firestore Security Rules
+//
+// HOW TO APPLY:
+//   1. Go to https://console.firebase.google.com
+//   2. Select your project
+//   3. Firestore Database → Rules tab
+//   4. Paste this entire file and click Publish
+// ============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Pack / entitlement fields that ONLY the backend (Admin SDK) may write.
+    function isLockedField(field) {
+      return field in [
+        'starterPackPurchased',
+        'legendPackPurchased',
+        'packType',
+        'permanentAdsRemoved',
+        'tapIncomeMultiplier',
+        'autoIncomeMultiplier',
+        'badge',
+        'goldenButtonChanceMult',
+        'starterBoostUntil',
+        'adsRemovedUntil',
+        'offlineEarningLimitHours',
+        'bonusWheelSpins',
+        'ownedThemes',
+        'ownedSkins',
+        'serverCoinsBonus'
+      ];
+    }
+
+    function hasLockedFields(keys) {
+      return keys.hasAny([
+        'starterPackPurchased',
+        'legendPackPurchased',
+        'packType',
+        'permanentAdsRemoved',
+        'tapIncomeMultiplier',
+        'autoIncomeMultiplier',
+        'badge',
+        'goldenButtonChanceMult',
+        'starterBoostUntil',
+        'adsRemovedUntil',
+        'offlineEarningLimitHours',
+        'bonusWheelSpins',
+        'ownedThemes',
+        'ownedSkins',
+        'serverCoinsBonus'
+      ]);
+    }
+
+    // ── users/{userId} ─────────────────────────────────────────
+    // Clients can READ their own document (to restore purchases on login).
+    // Clients can CREATE/UPDATE only safe profile fields (uid, email, name,
+    // photoURL, provider, lastLoginAt, createdAt). Pack/badge/purchase
+    // fields stay write-locked — only the backend Admin SDK can change them.
+    match /users/{userId} {
+
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Create: brand-new profile document. Block any locked field from
+      // being set on creation.
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && !hasLockedFields(request.resource.data.keys());
+
+      // Update: only allow if the client is not changing any locked field.
+      // diff().affectedKeys() returns just the fields that actually changed,
+      // so unchanged pack fields on the doc are fine.
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && !hasLockedFields(
+                         request.resource.data.diff(resource.data).affectedKeys()
+                       );
+
+      allow delete: if false;
+
+      // ── users/{userId}/progress/gameState ──────────────────
+      // Clients CAN write their own game progress (coins, level, upgrades).
+      // They CANNOT touch pack fields because those only live on the parent doc.
+      match /progress/gameState {
+        allow read:  if request.auth != null && request.auth.uid == userId;
+        allow write: if request.auth != null && request.auth.uid == userId
+                     && !hasLockedFields(request.resource.data.keys());
+      }
+    }
+
+    // ── purchases/{orderId} ────────────────────────────────────
+    // Users can read their own purchase records (for support / restore).
+    // Only backend can write (idempotency guard).
+    match /purchases/{orderId} {
+      allow read:  if request.auth != null
+                   && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
