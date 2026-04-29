@@ -5902,22 +5902,21 @@ function renderAuthModal() {
         <button class="auth-action logout" style="width: 100%; margin-top: 8px;" id="btnSignOut">Sign Out</button>
       </div>
     `;
-  document.getElementById('btnCloudSync').onclick = async () => {
-  const btn = document.getElementById('btnCloudSync');
-  btn.textContent = '⏳ Syncing...';
-  btn.disabled = true;
-  await Auth.saveProgress();
-  btn.textContent = '✓ Synced!';
-  setTimeout(() => { btn.textContent = '☁️ Sync to Cloud Now'; btn.disabled = false; }, 1500);
-};
-
-document.getElementById('btnSignOut').onclick = async () => {
-  if (!confirm('Sign out? Your progress will stay on this device.')) return;
-  await Auth.signOut();
-  document.getElementById('modalAuth').classList.remove('active');
-  toast('Signed out', '👋');
-};
-return;
+ document.getElementById('btnCloudSync').onclick = async () => {
+      const btn = document.getElementById('btnCloudSync');
+      btn.textContent = '⟲ Syncing...';
+      btn.disabled = true;
+      await Auth.saveProgress();
+      btn.textContent = '✓ Synced!';
+      setTimeout(() => { btn.textContent = '☁️ Sync to Cloud Now'; btn.disabled = false; }, 1500);
+    };
+    document.getElementById('btnSignOut').onclick = async () => {
+      if (!confirm('Sign out? Your progress will stay on this device.')) return;
+      await Auth.signOut();
+      document.getElementById('modalAuth').classList.remove('active');
+      toast('Signed out', '👋');
+    };
+    return;
   }
 
   c.innerHTML = `
