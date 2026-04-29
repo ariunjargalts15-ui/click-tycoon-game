@@ -6148,8 +6148,13 @@ function initAuth() {
 }
 
   // Wait for Firebase to load (or fail to load)
-window.addEventListener('firebase-ready', () => {
-  console.log("🔥 Firebase ready (SAFE)");
+function startFirebaseAuthListener() {
+  if (!window.firebaseFns || !window.firebaseAuth) {
+    console.warn("Firebase not ready yet");
+    return;
+  }
+
+  console.log("🔥 Firebase auth listener starting");
 
   window.firebaseFns.onAuthStateChanged(window.firebaseAuth, (user) => {
     console.log("🔥 Auth state changed:", user);
@@ -6160,14 +6165,28 @@ window.addEventListener('firebase-ready', () => {
       onUserSignedOut();
     }
   });
-});
-  setTimeout(() => { if (!Auth.currentUser && !window.FIREBASE_READY) updateSyncIndicator('offline'); }, 3000);
 }
 
-document.getElementById('btnAccount').addEventListener('click', () => {
-  Audio.init(); Audio.tap();
-  openAuthModal();
-});
+// Start immediately if ready, otherwise wait
+if (window.FIREBASE_READY && window.firebaseFns && window.firebaseAuth) {
+  startFirebaseAuthListener();
+} else {
+  window.addEventListener("firebase-ready", startFirebaseAuthListener);
+}
+
+// keep your offline indicator
+setTimeout(() => {
+  if (!Auth.currentUser && !window.FIREBASE_READY) updateSyncIndicator("offline");
+}, 3000);
+const btnAccount = document.getElementById('btnAccount');
+
+if (btnAccount) {
+  btnAccount.addEventListener('click', () => {
+    Audio.init(); 
+    Audio.tap();
+    openAuthModal();
+  });
+}
 
 // Save progress on page hide (for cloud sync)
 document.addEventListener('visibilitychange', () => {
