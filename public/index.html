@@ -11,6 +11,10 @@
 <title>TAP TYCOON — One Click Empire</title>
 <link rel="manifest" href="/manifest.json" />
 <script defer src="/_vercel/insights/script.js"></script>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7554165066835044"
+     crossorigin="anonymous"></script>
+  
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
@@ -29,39 +33,36 @@
     measurementId: "G-C5WW1X38LN"
   };
 
+  // Detect placeholder config — if so, run in offline/local mode
   window.FIREBASE_CONFIGURED = !window.FIREBASE_CONFIG.apiKey.includes('YOUR_API_KEY');
 
   if (window.FIREBASE_CONFIGURED) {
-    // Use Promise.all instead of top-level await for broader browser support (older iOS Safari etc.)
-    Promise.all([
-      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
-    ]).then(([appMod, authMod, dbMod]) => {
-      const app = appMod.initializeApp(window.FIREBASE_CONFIG);
-      window.firebaseAuth = authMod.getAuth(app);
-      window.firebaseDB   = dbMod.getFirestore(app);
-      window.firebaseFns  = {
-        doc: dbMod.doc, getDoc: dbMod.getDoc, setDoc: dbMod.setDoc,
-        onSnapshot: dbMod.onSnapshot, serverTimestamp: dbMod.serverTimestamp,
-        signIn: authMod.signInWithEmailAndPassword,
-        signUp: authMod.createUserWithEmailAndPassword,
-        signOut: authMod.signOut,
-        GoogleAuthProvider: authMod.GoogleAuthProvider,
-        signInWithPopup: authMod.signInWithPopup,
-        signInWithRedirect: authMod.signInWithRedirect,
-        getRedirectResult: authMod.getRedirectResult,
-        sendPasswordResetEmail: authMod.sendPasswordResetEmail,
-        onAuthStateChanged: authMod.onAuthStateChanged
-      };
+    try {
+      const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+              signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+              sendPasswordResetEmail } =
+              await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } =
+              await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+      const app = initializeApp(window.FIREBASE_CONFIG);
+      window.firebaseAuth = getAuth(app);
+      window.firebaseDB = getFirestore(app);
+      window.firebaseFns = { doc, getDoc, setDoc, onSnapshot, serverTimestamp,
+        signIn: signInWithEmailAndPassword,
+        signUp: createUserWithEmailAndPassword,
+        signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+        sendPasswordResetEmail, onAuthStateChanged };
       window.FIREBASE_READY = true;
+      // Notify the app when Firebase is ready
       window.dispatchEvent(new CustomEvent('firebase-ready'));
-    }).catch(e => {
+    } catch(e) {
       console.warn('Firebase failed to load:', e);
       window.FIREBASE_READY = false;
-    });
+    }
   } else {
-    console.log('[Tap Tycoon] Running in OFFLINE mode. Progress saves to localStorage only.');
+    console.log('[Tap Tycoon] Running in OFFLINE mode (Firebase not configured). Progress saves to localStorage only.');
     window.FIREBASE_READY = false;
   }
 </script>
@@ -75,7 +76,8 @@
   //    → switch to "Live" tab → Create App → copy Client ID
   //    Your PayPal account email: ariunjargal.ts15@gmail.com
   //    Make sure your account is upgraded to Business at paypal.com/business
- window.PAYPAL_CLIENT_ID = 'sb';
+  window.PAYPAL_CLIENT_ID = 'sb';
+
   // 2. BACKEND_URL
   //    Deploy server/index.js somewhere (Render/Railway/Fly.io all have free tiers)
   //    Then paste that URL here, e.g. 'https://tap-tycoon-api.onrender.com'
@@ -4933,6 +4935,7 @@ function applyStarterPack() {
 function applyLegendPack() {
   if (STATE.legendPackPurchased) return false;
   applyStarterPack();
+  
   STATE.legendPackPurchased = true;
   STATE.packType = 'legend';
 
@@ -5104,10 +5107,16 @@ function openPayPalCheckout(packId) {
   }
 
   // Check if PayPal is configured
-  if (window.PAYPAL_CLIENT_ID === 'YOUR_PAYPAL_LIVE_CLIENT_ID' || !window.PAYPAL_CLIENT_ID) {
-    showPackFail('Payment not yet configured. Please try again later.');
-    return;
-  }
+ if (
+  !window.PAYPAL_CLIENT_ID ||
+  window.PAYPAL_CLIENT_ID === 'YOUR_PAYPAL_LIVE_CLIENT_ID' ||
+  !window.BACKEND_URL
+) {
+  console.log("PAYPAL_CLIENT_ID:", window.PAYPAL_CLIENT_ID);
+  console.log("BACKEND_URL:", window.BACKEND_URL);
+  showPackFail('Payment not configured. Check PayPal Client ID and Backend URL.');
+  return;
+}
 
   _paypalPackId = packId;
   document.getElementById('paypalTitle').textContent    = pack.name;
@@ -5153,7 +5162,7 @@ function _renderPayPalButtons(packId, pack) {
           '<div style="text-align:center;padding:20px;color:#16a34a;font-weight:700;">✓ Payment approved — unlocking…</div>';
         try {
           // Backend verifies + captures + updates Firestore. Never trust client-only.
-         if (window.PAYPAL_CLIENT_ID === 'sb') {
+        if (window.PAYPAL_CLIENT_ID === 'sb') {
   if (packId === 'starter') applyStarterPack();
   if (packId === 'legend') applyLegendPack();
 
@@ -5299,7 +5308,11 @@ function renderPacks() {
   c.querySelectorAll('[data-buy]').forEach(b => {
     b.onclick = () => {
       Audio.tap();
-      openPayPalCheckout(b.dataset.buy);
+      if (!window.BACKEND_URL) {
+  showPackFail('Backend URL not configured.');
+  return;
+}
+  openPayPalCheckout(b.dataset.buy);
     };
   });
   document.getElementById('btnRestorePurchases').onclick = restorePurchases;
@@ -5564,25 +5577,16 @@ const Auth = {
     return cred.user;
   },
 
-  signInGoogle() {
-    // NOT async — popup must be called synchronously from the click handler (iOS Safari).
-    if (!this.isReady()) return Promise.reject(new Error('Firebase not configured'));
+  async signInGoogle() {
+    if (!this.isReady()) throw new Error('Firebase not configured');
     const fns = window.firebaseFns;
     const provider = new fns.GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
-    return fns.signInWithPopup(window.firebaseAuth, provider)
-      .then(cred => cred.user)
-      .catch(e => {
-        // User explicitly cancelled — surface that, don't redirect
-        if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
-          throw new Error('Sign-in was cancelled');
-        }
-        // Any other popup failure (blocked, internal error, unsupported env, etc.)
-        // → fall back to redirect, which works on all browsers
-        console.warn('[Auth] Popup failed (' + (e.code || e.message) + '), falling back to redirect');
-        return fns.signInWithRedirect(window.firebaseAuth, provider).then(() => null);
-      });
+    // Always use redirect — works on all devices, no popup-blocking issues
+    sessionStorage.setItem('pendingGoogleRedirect', '1');
+    await fns.signInWithRedirect(window.firebaseAuth, provider);
+    return null;
   },
 
   async resetPassword(email) {
@@ -5720,7 +5724,7 @@ const Auth = {
     }, 30000);
   }
 };
-
+window.Auth = Auth;
 function updateSyncIndicator(status) {
   const el = document.getElementById('syncIndicator');
   if (!el) return;
@@ -5801,7 +5805,9 @@ async function onUserSignedIn(user) {
   // Close auth modal if open
   document.getElementById('modalAuth').classList.remove('active');
 }
+
 function onUserSignedOut() {
+
   Auth.currentUser = null;
   STATE.userId = null;
   STATE.email = null;
@@ -5821,7 +5827,7 @@ function onUserSignedOut() {
   localStorage.removeItem('tap-tycoon-save');
   localStorage.removeItem('purchasedPacks');
   localStorage.removeItem('ownedPacks');
-
+ 
   Object.assign(STATE, getDefaultState());
 
   STATE.pack = 'free';
@@ -5830,9 +5836,9 @@ function onUserSignedOut() {
   STATE.unlockedThemes = [];
   STATE.currentSkin = null;
   STATE.currentTheme = null;
-  STATE.starterPackPurchased = false;
-  STATE.legendPackPurchased = false;
 
+  saveGame();
+  
   updateAuthUI();
   updateHUD();
   renderPacks();
@@ -5842,17 +5848,8 @@ function onUserSignedOut() {
 
   updateBoostIndicator();
   updateSyncIndicator('offline');
-
-  setTimeout(() => {
-    location.reload();
-  }, 300);
 }
 
-}
-
-// =================================================================
-// AUTH MODAL UI
-// =================================================================
 function openAuthModal() {
   document.getElementById('modalAuth').classList.add('active');
   renderAuthModal();
@@ -5902,7 +5899,7 @@ function renderAuthModal() {
         <button class="auth-action logout" style="width: 100%; margin-top: 8px;" id="btnSignOut">Sign Out</button>
       </div>
     `;
- document.getElementById('btnCloudSync').onclick = async () => {
+    document.getElementById('btnCloudSync').onclick = async () => {
       const btn = document.getElementById('btnCloudSync');
       btn.textContent = '⟲ Syncing...';
       btn.disabled = true;
@@ -5928,7 +5925,7 @@ function renderAuthModal() {
       </p>
     </div>
     <div class="auth-error" id="authError"></div>
-    <button class="auth-google" id="btnGoogle" style="width:100%; justify-content:center; padding:14px 20px; font-size:15px;">
+    <button class="auth-google" id="btnGoogle" style="width:100%; justify-content:center; padding:14px 20px; font-size:15px;" ${!Auth.isReady() ? 'disabled' : ''}>
       <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5h-1.9V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.5-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.3 2.4-5.2 0-9.6-3.3-11.2-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5h-1.9V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6.2 5.2C40.7 35.9 44 30.5 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
       Continue with Google
     </button>
@@ -5947,39 +5944,18 @@ function clearAuthError() {
   if (e) e.classList.remove('show');
 }
 
-function handleGoogleSignIn() {
-  // NOT async — iOS Safari only allows popups from synchronous user-gesture handlers.
+async function handleGoogleSignIn() {
   clearAuthError();
   const btn = document.getElementById('btnGoogle');
-
-  if (!Auth.isReady()) {
-    // Firebase still loading — show feedback and retry once it's ready
-    if (btn) { btn.disabled = true; btn.textContent = '⟲ Loading...'; }
-    const t = setTimeout(() => {
-      if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
-      showAuthError('Connection timed out — please try again.');
-    }, 8000);
-    window.addEventListener('firebase-ready', () => {
-      clearTimeout(t);
-      if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
-    }, { once: true });
-    return;
+  if (btn) { btn.disabled = true; btn.textContent = '⟲ Redirecting to Google...'; }
+  try {
+    await Auth.signInGoogle(); // always uses redirect — page navigates away
+  } catch(e) {
+    const msg = (e.message || 'Sign-in failed. Try again.')
+      .replace(/^Firebase: /, '').replace(/ \(auth\/[^)]+\)\.$/, '');
+    showAuthError(msg);
+    if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
   }
-
-  if (btn) { btn.disabled = true; btn.textContent = '⟲ Opening Google...'; }
-
-  // Synchronous call from click handler — user-gesture context intact for popup
-  Auth.signInGoogle()
-    .then(user => {
-      if (!user) return; // redirect path — page is navigating away
-      // popup path: onAuthStateChanged fires and calls onUserSignedIn automatically
-    })
-    .catch(e => {
-      const msg = (e.message || 'Sign-in failed. Try again.')
-        .replace(/^Firebase: /, '').replace(/ \(auth\/[^)]+\)\.$/, '');
-      showAuthError(msg);
-      if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
-    });
 }
 
 function updateAuthUI() {
@@ -6003,51 +5979,29 @@ function initAuth() {
     return;
   }
 
-  // We must wait for BOTH getRedirectResult AND onAuthStateChanged to resolve
-  // before deciding to open the auth modal. Either one could arrive first.
-  // (Avoids the "modal flashes open then immediately closes after Google redirect" bug.)
-  let redirectDone = false;
-  let authStateDone = false;
+  // If we just came back from a Google redirect, block the modal until
+  // Firebase processes the result (prevents the "modal flashes then closes" bug)
+  const pendingRedirect = !!sessionStorage.getItem('pendingGoogleRedirect');
+  if (pendingRedirect) sessionStorage.removeItem('pendingGoogleRedirect');
+  let redirectBlocking = pendingRedirect;
 
-  const maybeSetOffline = () => {
-    if (redirectDone && authStateDone && !Auth.currentUser) {
-      onUserSignedOut();
-      // Don't auto-open the modal — user opens it themselves via the account button.
-    }
-  };
-
-  // Always call getRedirectResult — it completes any in-progress redirect sign-in.
+  // Process the redirect result — completes the sign-in after page reload
   window.firebaseFns.getRedirectResult(window.firebaseAuth)
-    .then(result => {
-      redirectDone = true;
-      if (result && result.user) {
-        console.log('[Auth] Redirect sign-in completed for', result.user.email);
-      }
-      maybeSetOffline();
-    })
+    .then(() => { redirectBlocking = false; })
     .catch(e => {
-      redirectDone = true;
-      console.error('[Auth] getRedirectResult error:', e.code, e.message);
-      const code = e.code || '';
-      const domain = location.hostname;
-      if (code.includes('unauthorized-domain')) {
-        // This is the most common deployment error — tell user exactly what to add
-        toast('Add "' + domain + '" to Firebase Console → Auth → Authorized domains', '❌');
-      } else if (code && code !== 'auth/null-user') {
-        toast('Sign-in error: ' + (e.code || e.message), '❌');
+      redirectBlocking = false;
+      if ((e.code || '').includes('unauthorized-domain')) {
+        toast('Add your site URL to Firebase Auth → Authorized domains', '❌');
       }
-      maybeSetOffline();
+      if (!Auth.currentUser) { onUserSignedOut(); openAuthModal(); }
     });
 
   window.firebaseFns.onAuthStateChanged(window.firebaseAuth, (user) => {
     if (user) {
-      authStateDone = true;
-      console.log('[Auth] onAuthStateChanged: signed in as', user.email);
-      onUserSignedIn(user).catch(err => console.error('[Auth] onUserSignedIn error:', err));
+      redirectBlocking = false;
+      onUserSignedIn(user);
     } else {
-      authStateDone = true;
-      console.log('[Auth] onAuthStateChanged: no user');
-      maybeSetOffline();
+      if (!redirectBlocking) { onUserSignedOut(); openAuthModal(); }
     }
   });
 }
@@ -6588,5 +6542,47 @@ document.addEventListener('visibilitychange', () => {
 
 init();
 </script>
+  <script>
+(function initFirebaseAuthFix() {
+  if (!window.firebaseAuth || !window.firebaseFns || !window.Auth) {
+    setTimeout(initFirebaseAuthFix, 300);
+    return;
+  }
+
+  window.firebaseFns.getRedirectResult(window.firebaseAuth).catch(console.log);
+
+  window.firebaseFns.onAuthStateChanged(window.firebaseAuth, async (user) => {
+  window.Auth = window.Auth || {};
+  window.Auth.currentUser = user || null;
+  console.log("✅ Logged in user:", user);
+
+    if (typeof renderAuthModal === 'function') renderAuthModal();
+
+   if (user) {
+  window.Auth.currentUser = user;
+
+  await window.firebaseFns.setDoc(
+    window.firebaseFns.doc(window.firebaseDB, "users", user.uid),
+    {
+      uid: user.uid,
+      email: user.email || "",
+      name: user.displayName || "",
+      photoURL: user.photoURL || "",
+      provider: "google",
+      lastLoginAt: window.firebaseFns.serverTimestamp(),
+      createdAt: window.firebaseFns.serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  const modal = document.getElementById('modalAuth');
+  if (modal) modal.classList.remove('active');
+  if (typeof toast === 'function') toast('Signed in successfully!', '✅');
+}
+    }
+  });
+})();
+</script>
+  
 </body>
 </html>
