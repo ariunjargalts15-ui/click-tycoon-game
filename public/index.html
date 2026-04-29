@@ -6147,12 +6147,20 @@ function initAuth() {
   });
 }
 
-if (window.FIREBASE_READY) {
-  initAuth();
-} else {
   // Wait for Firebase to load (or fail to load)
-  window.addEventListener('firebase-ready', initAuth);
-  // After 3 seconds, give up and run offline
+window.addEventListener('firebase-ready', () => {
+  console.log("🔥 Firebase ready (SAFE)");
+
+  window.firebaseFns.onAuthStateChanged(window.firebaseAuth, (user) => {
+    console.log("🔥 Auth state changed:", user);
+
+    if (user) {
+      onUserSignedIn(user);
+    } else {
+      onUserSignedOut();
+    }
+  });
+});
   setTimeout(() => { if (!Auth.currentUser && !window.FIREBASE_READY) updateSyncIndicator('offline'); }, 3000);
 }
 
