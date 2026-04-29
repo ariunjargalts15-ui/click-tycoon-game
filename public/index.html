@@ -5902,24 +5902,38 @@ function renderAuthModal() {
         <button class="auth-action logout" style="width: 100%; margin-top: 8px;" id="btnSignOut">Sign Out</button>
       </div>
     `;
-   document.getElementById('btnSignOut').onclick = async () => {
-  if (!confirm('Sign out? This will clear local progress and premium packs on this device.')) return;
+   document.getElementById('btnCloudSync').onclick = async () => {
+  const btn = document.getElementById('btnCloudSync');
+  btn.textContent = '⏳ Syncing...';
+  btn.disabled = true;
 
-  try {
-    if (window.firebaseFns && window.firebaseAuth) {
-      await window.firebaseFns.signOut(window.firebaseAuth);
-    } else if (Auth.signOut) {
-      await Auth.signOut();
-    }
-  } catch (e) {
-    console.error("Sign out error:", e);
-  }
+  await Auth.saveProgress();
 
-  document.getElementById('modalAuth').classList.remove('active');
-  toast('Signed out', '👋');
-
-  onUserSignedOut();
+  btn.textContent = '✓ Synced!';
+  setTimeout(() => {
+    btn.textContent = '☁️ Sync to Cloud Now';
+    btn.disabled = false;
+  }, 1500);
 };
+
+const signOutBtn = document.getElementById('btnSignOut');
+
+if (signOutBtn) {
+  signOutBtn.onclick = async () => {
+    if (!confirm('Sign out? This will clear local progress and premium packs on this device.')) return;
+
+    try {
+      await Auth.signOut();
+    } catch (e) {
+      console.error('Sign out error:', e);
+    }
+
+    document.getElementById('modalAuth').classList.remove('active');
+    toast('Signed out', '👋');
+
+    onUserSignedOut();
+  };
+}
   }
 
   c.innerHTML = `
