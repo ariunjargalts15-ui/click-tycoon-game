@@ -5701,7 +5701,6 @@ const Auth = {
     if (this.unsubscribe) { this.unsubscribe(); this.unsubscribe = null; }
     if (this.syncInterval) { clearInterval(this.syncInterval); this.syncInterval = null; }
     await window.firebaseFns.signOut(window.firebaseAuth);
-    onUserSignedOut(true);
   },
 
   // Save the player's progress to Firestore (the parts they own client-side)
@@ -5842,6 +5841,33 @@ async function onUserSignedIn(user) {
   Auth.currentUser = user;
   STATE.userId = user.uid;
   STATE.email = user.email;
+
+  // Save or update the Firebase user profile document.
+  // This creates: Firestore → users → {user.uid}
+  try {
+    const fns = window.firebaseFns;
+    const userRef = fns.doc(window.firebaseDB, 'users', user.uid);
+    const userSnap = await fns.getDoc(userRef);
+
+    const profileData = {
+      uid: user.uid,
+      email: user.email || '',
+      name: user.displayName || '',
+      photoURL: user.photoURL || '',
+      provider: (user.providerData && user.providerData[0] && user.providerData[0].providerId) || 'google.com',
+      lastLoginAt: fns.serverTimestamp()
+    };
+
+    // Only set createdAt on first login, so it does not reset every time.
+    if (!userSnap.exists()) {
+      profileData.createdAt = fns.serverTimestamp();
+    }
+
+    await fns.setDoc(userRef, profileData, { merge: true });
+  } catch (e) {
+    console.warn('User profile save failed:', e);
+    toast('Signed in, but profile save failed. Check Firestore rules.', '⚠️');
+  }
 
   toast(`Welcome, ${user.displayName || user.email || 'Player'}!`, '👋');
   updateAuthUI();
@@ -6658,50 +6684,7 @@ document.addEventListener('visibilitychange', () => {
 
 init();
 </script>
-  <script>
-(function initFirebaseAuthFix() {
-  return;
-  /*
-  if (!window.firebaseAuth || !window.firebaseFns || !window.Auth) {
-    setTimeout(initFirebaseAuthFix, 300);
-    return;
-  }
 
-  window.firebaseFns.getRedirectResult(window.firebaseAuth).catch(console.log);
-
-  window.firebaseFns.onAuthStateChanged(window.firebaseAuth, async (user) => {
-  window.Auth = window.Auth || {};
-  window.Auth.currentUser = user || null;
-  console.log("✅ Logged in user:", user);
-
-    if (typeof renderAuthModal === 'function') renderAuthModal();
-
-   if (user) {
-  window.Auth.currentUser = user;
-
-  await window.firebaseFns.setDoc(
-    window.firebaseFns.doc(window.firebaseDB, "users", user.uid),
-    {
-      uid: user.uid,
-      email: user.email || "",
-      name: user.displayName || "",
-      photoURL: user.photoURL || "",
-      provider: "google",
-      lastLoginAt: window.firebaseFns.serverTimestamp(),
-      createdAt: window.firebaseFns.serverTimestamp()
-    },
-    { merge: true }
-  );
-
-  const modal = document.getElementById('modalAuth');
-  if (modal) modal.classList.remove('active');
-  if (typeof toast === 'function') toast('Signed in successfully!', '✅');
-}
-    }
-  });
-  */
-})();
-</script>
   
 </body>
 </html>
