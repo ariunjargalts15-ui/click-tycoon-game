@@ -5807,24 +5807,49 @@ async function onUserSignedIn(user) {
 }
 
 function onUserSignedOut() {
+
   Auth.currentUser = null;
   STATE.userId = null;
   STATE.email = null;
-  if (Auth.unsubscribe) { Auth.unsubscribe(); Auth.unsubscribe = null; }
-  if (Auth.syncInterval) { clearInterval(Auth.syncInterval); Auth.syncInterval = null; }
-   localStorage.removeItem(SAVE_KEY);
+
+  if (Auth.unsubscribe) {
+    Auth.unsubscribe();
+    Auth.unsubscribe = null;
+  }
+
+  if (Auth.syncInterval) {
+    clearInterval(Auth.syncInterval);
+    Auth.syncInterval = null;
+  }
+
+  localStorage.removeItem(SAVE_KEY);
+  localStorage.removeItem('tapTycoonSave');
+  localStorage.removeItem('tap-tycoon-save');
+  localStorage.removeItem('purchasedPacks');
+  localStorage.removeItem('ownedPacks');
+ 
   Object.assign(STATE, getDefaultState());
+
+  STATE.pack = 'free';
+  STATE.ownedPacks = [];
+  STATE.unlockedSkins = [];
+  STATE.unlockedThemes = [];
+  STATE.currentSkin = null;
+  STATE.currentTheme = null;
+
+  saveGame();
+  
   updateAuthUI();
   updateHUD();
   renderPacks();
+
+  if (typeof renderSkins === 'function') renderSkins();
+  if (typeof renderThemes === 'function') renderThemes();
+
   updateBoostIndicator();
   updateSyncIndicator('offline');
-  location.reload();
 }
 
-// =================================================================
-// AUTH MODAL UI
-// =================================================================
 function openAuthModal() {
   document.getElementById('modalAuth').classList.add('active');
   renderAuthModal();
