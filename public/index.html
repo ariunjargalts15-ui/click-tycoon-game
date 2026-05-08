@@ -3841,24 +3841,6 @@ const SAVE_KEY = 'tapTycoon';
 const DEFAULT_STATE = JSON.parse(JSON.stringify(STATE));
 
 function getDefaultState() {
-  return {
-    coins: 0, totalCoins: 0, totalTaps: 0, level: 1, levelXP: 0,
-    prestigeStars: 0, prestigeMult: 1, totalPrestiges: 0,
-    starShop: {}, achievements: {}, achievementsUnlocked: 0,
-    upgrades: { clickPower: 0, multiplier: 0, crit: 0, combo: 0 },
-    auto: { cursor: 0, helper: 0, machine: 0, factory: 0, bank: 0 },
-    ownedSkins: ['💰'], equippedSkin: '💰',
-    ownedThemes: ['default'], equippedTheme: 'default', lastThemeUnlockShown: 0,
-    lastSeen: Date.now(), lastSpin: 0, lastDaily: 0, dailyStreak: 0,
-    comboCount: 0, comboLastTap: 0,
-    goldenButtonNext: Date.now() + 30000 + Math.random() * 60000,
-    starterBoostUntil: 0, offlineEarningLimitHours: 2,
-    bonusWheelSpins: 0, tapIncomeMultiplier: 1, autoIncomeMultiplier: 1,
-    userId: null, email: null
-  };
-}
-
-function getDefaultState() {
   const state = JSON.parse(JSON.stringify(DEFAULT_STATE));
   state.lastSeen = Date.now();
   state.goldenButtonNext = Date.now() + 30000 + Math.random() * 60000;
@@ -4189,7 +4171,6 @@ function addXP(amt) {
 
 // =================================================================
 // LEVEL UP — main progression carrot
-// Themes are NEVER unlocked here (those are pack-only).
 // Each level grants:
 //   • Quadratic coin bonus (level² × 100)
 //   • +2% permanent tap & auto income (via levelMult() in earnings formulas)
@@ -5016,15 +4997,22 @@ function spinWheel() {
 // LEVEL-BASED THEME UNLOCKS
 // =================================================================
 function checkThemeUnlocks(prevLevel, newLevel) {
+  if (!Array.isArray(STATE.ownedThemes)) STATE.ownedThemes = ['default'];
+  const newlyUnlocked = [];
   THEMES.forEach(theme => {
     if (theme.unlockLevel > prevLevel && theme.unlockLevel <= newLevel) {
       if (!STATE.ownedThemes.includes(theme.id)) {
         STATE.ownedThemes.push(theme.id);
-        saveGame();
-        showThemeUnlockCelebration(theme);
+        newlyUnlocked.push(theme);
       }
     }
   });
+  if (newlyUnlocked.length === 0) return;
+  saveGame();
+  renderWorldThemes();
+  if (typeof renderSkins === 'function') renderSkins();
+  // Show celebration for the highest-level unlocked theme (last in array)
+  showThemeUnlockCelebration(newlyUnlocked[newlyUnlocked.length - 1]);
 }
 
 function showThemeUnlockCelebration(theme) {
@@ -5036,14 +5024,17 @@ function showThemeUnlockCelebration(theme) {
   for (let i = 0; i < 30; i++) setTimeout(() => spawnConfetti(), i * 40);
   const equipBtn = document.getElementById('btnThemeUnlockEquip');
   const laterBtn = document.getElementById('btnThemeUnlockLater');
-  const close = () => document.getElementById('modalThemeUnlock').classList.remove('active');
+  const close = () => {
+    document.getElementById('modalThemeUnlock').classList.remove('active');
+    renderWorldThemes();
+    if (typeof renderSkins === 'function') renderSkins();
+  };
   equipBtn.onclick = () => {
     STATE.equippedTheme = theme.id;
     applyTheme(theme);
     saveGame();
     if (Auth && Auth.currentUser) Auth.saveProgress();
     close();
-    renderWorldThemes();
     toast('Theme equipped! ✨', theme.flag);
   };
   laterBtn.onclick = close;
