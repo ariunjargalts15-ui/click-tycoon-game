@@ -4051,6 +4051,21 @@ const THEMES = [
 
 // Pack constants removed — themes now level-based
 
+// =================================================================
+// WHEEL PRIZES
+// amount multiplier applied to: clickValue()*50 + autoCPS()*30
+// =================================================================
+const WHEEL_PRIZES = [
+  { label: '×1',     amount: 1,    color: '#6d28d9', text: 'white' },
+  { label: '×2',     amount: 2,    color: '#db2777', text: 'white' },
+  { label: '×3',     amount: 3,    color: '#d97706', text: 'white' },
+  { label: '×5',     amount: 5,    color: '#059669', text: 'white' },
+  { label: '×1',     amount: 1,    color: '#2563eb', text: 'white' },
+  { label: '×2',     amount: 2,    color: '#7c3aed', text: 'white' },
+  { label: '×10',    amount: 10,   color: '#dc2626', text: 'white' },
+  { label: 'JACKPOT',amount: 50,   color: '#fbbf24', text: '#1a0b2e' }
+];
+
 
 function levelMult() { return 1 + (STATE.level - 1) * 0.02; }
 
