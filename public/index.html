@@ -4539,13 +4539,14 @@ function updateHUD() {
   const spinReady = Date.now() - STATE.lastSpin >= starWheelCooldownMs();
   document.getElementById('wheelBadge').style.display = spinReady ? 'inline-block' : 'none';
 
-  // More tab badge: show if stars to spend OR daily reward available
+  // More tab badge: show if stars to spend, daily reward available, OR prestige is ready
   const hasStars = (STATE.prestigeStars || 0) > 0;
   const today = new Date().toDateString();
   const lastDate = STATE.lastDaily ? new Date(STATE.lastDaily).toDateString() : null;
   const dailyAvailable = lastDate !== today;
+  const prestigeReady = prestigeReward() >= 1;
   const moreBadge = document.getElementById('moreBadge');
-  if (moreBadge) moreBadge.style.display = (hasStars || dailyAvailable) ? 'inline-block' : 'none';
+  if (moreBadge) moreBadge.style.display = (hasStars || dailyAvailable || prestigeReady) ? 'inline-block' : 'none';
 }
 
 // ---------- SHOP RENDER ----------
@@ -5356,6 +5357,7 @@ const Auth = {
         prestigeStars: STATE.prestigeStars,
         prestigeMult: STATE.prestigeMult,
         totalPrestiges: STATE.totalPrestiges || 0,
+        _spentStars: STATE._spentStars || 0,
         starShop: STATE.starShop || {},
         achievements: STATE.achievements || {},
         achievementsUnlocked: STATE.achievementsUnlocked || 0,
@@ -5906,7 +5908,7 @@ function renderPrestige(c) {
       <p style="font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.5;">
         • All ⭐ stars and Star Shop upgrades<br>
         • All achievements & their +earnings bonuses<br>
-        • All themes, skins, and pack purchases<br>
+        • All themes and button skins<br>
         • All daily streak progress
       </p>
     </div>
@@ -5928,24 +5930,31 @@ function doPrestige() {
   STATE.prestigeStars += reward;
   STATE.prestigeMult = 1 + STATE.prestigeStars * 0.1;
   STATE.totalPrestiges = (STATE.totalPrestiges || 0) + 1;
+
   // Reset run state — Starting Capital from Star Shop applies after reset
   STATE.coins = starStartCoins();
   STATE.totalCoins = starStartCoins();
   STATE.totalTaps = 0;
   STATE.level = 1;
   STATE.levelXP = 0;
+  STATE.comboCount = 0;
+  STATE.comboLastTap = 0;
   Object.keys(STATE.upgrades).forEach(k => STATE.upgrades[k] = 0);
   Object.keys(STATE.auto).forEach(k => STATE.auto[k] = 0);
-  // Reset transient achievement trackers (so combo/jackpot/golden achievements reset run-by-run)
-  // Actually NO — these are one-time achievements, keep them tracked all-time.
 
   Audio.win();
-  toast(`👑 PRESTIGED! +${reward} ⭐ stars`, '👑');
+  toast(`👑 PRESTIGED! +${reward} ⭐ stars. Multiplier now ×${STATE.prestigeMult.toFixed(1)}`, '👑');
   for (let i = 0; i < 40; i++) setTimeout(() => spawnConfetti(), i * 30);
+
+  // Refresh all UI that depends on level / income
+  applyTierVisuals(false);
+  updateBoostIndicator();
   updateHUD();
   renderShop();
   renderMore();
+  renderWorldThemes();
   saveGame();
+  if (Auth && Auth.currentUser) Auth.saveProgress();
   checkAchievements();
 }
 
