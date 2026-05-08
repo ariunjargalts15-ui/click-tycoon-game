@@ -66,8 +66,8 @@
     window.FIREBASE_READY = false;
   }
 </script>
-<!-- PayPal SDK — loaded dynamically at checkout time -->
-<script>
+<!-- Monetization replaced with level-based theme unlocks -->
+<script type="text/ignored">
   // ============================================================
   // CONFIGURATION — fill in before deploying
   // ============================================================
@@ -1762,78 +1762,81 @@
 
   .pack-card.legend .pack-ribbon { background: var(--magenta); }
 
-  /* PayPal container */
-  .paypal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10,1,24,0.85);
-    backdrop-filter: blur(8px);
-    z-index: 300;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
 
-  .paypal-overlay.active { display: flex; }
-
-  .paypal-box {
-    background: var(--paper);
-    border-radius: 20px;
-    padding: 20px;
-    max-width: 400px;
-    width: 100%;
-    color: var(--ink);
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* ============ WORLD THEMES — Level Unlock Cards ============ */
+  .world-themes-header {
+    text-align: center; padding: 12px 8px 16px;
+    font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5;
   }
-
-  .paypal-box h3 {
-    font-family: var(--display);
-    font-size: 22px;
-    margin-bottom: 4px;
-    color: var(--ink);
+  .theme-unlock-card {
+    border-radius: 18px; margin-bottom: 14px; overflow: hidden; position: relative;
+    border: 2px solid rgba(255,255,255,0.12); transition: transform 0.15s, box-shadow 0.15s;
   }
-
-  .paypal-box .price {
-    font-family: var(--mono);
-    font-size: 28px;
-    font-weight: 800;
-    color: #16a34a;
-    margin: 8px 0 16px;
+  .theme-unlock-card.unlocked { border-color: rgba(255,255,255,0.25); cursor: pointer; }
+  .theme-unlock-card.unlocked:active { transform: scale(0.98); }
+  .theme-unlock-card.active-theme { border-color: var(--gold); box-shadow: 0 0 24px rgba(255,210,63,0.4); }
+  .theme-unlock-card.locked { opacity: 0.75; }
+  .theme-card-bg-full { height: 90px; position: relative; overflow: hidden; }
+  .theme-card-bg-full::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.6) 100%);
   }
-
-  .paypal-box .desc {
-    font-size: 13px;
-    color: #444;
-    margin-bottom: 16px;
-    line-height: 1.5;
+  .theme-card-inner { padding: 10px 14px 12px; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+  .theme-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .theme-card-title { font-family: var(--display); font-size: 15px; color: var(--paper); letter-spacing: 0.3px; }
+  .theme-level-badge {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 8px; background: rgba(255,255,255,0.15); color: var(--paper);
   }
-
-  .paypal-box .demo-warning {
-    background: #fef3c7;
-    border: 2px solid #f59e0b;
-    border-radius: 10px;
-    padding: 10px 12px;
-    margin-bottom: 16px;
-    font-size: 11px;
-    color: #92400e;
-    line-height: 1.4;
+  .theme-level-badge.unlocked-badge { background: rgba(74,222,128,0.25); color: #4ade80; border: 1px solid rgba(74,222,128,0.4); }
+  .theme-level-badge.active-badge { background: rgba(255,210,63,0.25); color: var(--gold); border: 1px solid rgba(255,210,63,0.5); }
+  .theme-card-desc { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
+  .theme-equip-btn {
+    width: 100%; padding: 8px; border-radius: 10px; border: none;
+    font-family: var(--body); font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity 0.15s, transform 0.1s;
   }
-
-  .paypal-cancel {
-    width: 100%;
-    background: transparent;
-    border: 2px solid #ddd;
-    color: #666;
-    padding: 10px;
-    border-radius: 10px;
-    margin-top: 12px;
-    cursor: pointer;
-    font-family: var(--body);
-    font-weight: 600;
+  .theme-equip-btn:active { transform: scale(0.97); }
+  .theme-equip-btn.btn-equip { background: linear-gradient(135deg, var(--cyan), var(--purple)); color: white; }
+  .theme-equip-btn.btn-active { background: rgba(255,210,63,0.2); color: var(--gold); border: 2px solid rgba(255,210,63,0.4); cursor: default; }
+  .theme-lock-bar { display: flex; align-items: center; gap: 8px; }
+  .theme-lock-text { font-size: 11px; color: rgba(255,255,255,0.55); white-space: nowrap; }
+  .theme-progress-track { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+  .theme-progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--mint)); border-radius: 4px; transition: width 0.5s ease; }
+  .theme-lock-levels { font-size: 11px; color: rgba(255,255,255,0.4); font-family: var(--mono); white-space: nowrap; }
+  .theme-unlock-modal {
+    background: radial-gradient(ellipse at center, #1a0050 0%, #0a0020 70%);
+    border: 3px solid var(--gold); border-radius: 28px; padding: 32px 24px;
+    text-align: center; max-width: 340px; width: 90%;
+    box-shadow: 0 0 80px rgba(255,210,63,0.5), 0 0 40px rgba(255,45,146,0.3);
+    animation: slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; overflow: hidden;
   }
+  .theme-unlock-modal::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(255,210,63,0.15) 0%, transparent 60%); pointer-events: none;
+  }
+  .theme-unlock-flag { font-size: 56px; line-height: 1; margin-bottom: 12px; filter: drop-shadow(0 0 20px rgba(255,210,63,0.6)); animation: pulse-scale 0.6s ease-out; }
+  @keyframes pulse-scale { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
+  .theme-unlock-title { font-family: var(--display); font-size: 13px; color: var(--gold); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; }
+  .theme-unlock-name { font-family: var(--display); font-size: 22px; color: var(--paper); margin-bottom: 8px; text-shadow: 0 0 20px rgba(255,255,255,0.3); }
+  .theme-unlock-desc { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 20px; line-height: 1.5; }
+  .theme-unlock-equip-btn {
+    background: linear-gradient(135deg, var(--gold), var(--gold-deep)); color: var(--ink);
+    border: none; border-radius: 14px; padding: 12px 28px; font-family: var(--display); font-size: 16px;
+    cursor: pointer; box-shadow: 0 4px 0 #b8740a; transition: transform 0.1s; margin-bottom: 8px; width: 100%;
+  }
+  .theme-unlock-equip-btn:active { transform: scale(0.97); }
+  .theme-unlock-later-btn {
+    background: transparent; border: 2px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6);
+    border-radius: 10px; padding: 8px 20px; font-family: var(--body); font-size: 13px; cursor: pointer; width: 100%;
+  }
+  .theme-new-ribbon {
+    position: absolute; top: 10px; right: -8px; background: var(--magenta); color: white;
+    font-size: 10px; font-weight: 700; padding: 3px 14px 3px 8px; border-radius: 4px 0 0 4px;
+    letter-spacing: 1px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .tap-btn.btn-forest_gold { background: radial-gradient(circle at 30% 30%, #a8ff78, #78c541); }
+  .tap-btn.btn-monaco_car { background: radial-gradient(circle at 30% 30%, #f8d800, #e60026); }
+
 
   /* Profile badge */
   .profile-badge {
@@ -3568,9 +3571,8 @@
       <span class="icon">🛒</span><span class="name">Shop</span>
       <span class="badge" id="shopBadge" style="display:none">!</span>
     </button>
-    <button class="tab-btn" data-modal="packs" id="packsTabBtn">
-      <span class="icon">💎</span><span class="name">Packs</span>
-      <span class="badge" id="packsBadge">NEW</span>
+    <button class="tab-btn" data-modal="packs" id="themesTabBtn">
+      <span class="icon">🌍</span><span class="name">Themes</span>
     </button>
     <button class="tab-btn" data-modal="skins">
       <span class="icon">🌍</span><span class="name">Worlds</span>
@@ -3597,40 +3599,22 @@
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div class="sheet-title">💎 PACKS</div>
+      <div class="sheet-title">🌍 WORLD THEMES</div>
       <button class="sheet-close" data-close>✕</button>
     </div>
     <div class="sheet-content" id="packsContent"></div>
   </div>
 </div>
 
-<!-- ============ PAYPAL CHECKOUT OVERLAY ============ -->
-<div class="paypal-overlay" id="paypalOverlay">
-  <div class="paypal-box">
-    <h3 id="paypalTitle">Pack</h3>
-    <div class="price" id="paypalPrice">$0.99</div>
-    <div class="desc" id="paypalDesc"></div>
-    <div id="paypal-button-container"></div>
-    <button class="paypal-cancel" id="paypalCancel">Cancel</button>
-  </div>
-</div>
-
-<!-- ============ MODAL: PACK SUCCESS ============ -->
-<div class="modal-overlay center-modal" id="modalPackSuccess">
-  <div class="success-confetti">
-    <div class="title">🎉 PACK UNLOCKED! 🎉</div>
-    <p style="font-size: 14px; margin-bottom: 8px;" id="packSuccessName">Starter Pack</p>
-    <p style="font-size: 13px; opacity: 0.9;" id="packSuccessDesc">All rewards have been added to your account!</p>
-    <button class="jackpot-btn" id="btnPackSuccessClose" style="background: var(--gold); margin-top: 16px;">AWESOME!</button>
-  </div>
-</div>
-
-<!-- ============ MODAL: PAYMENT FAILED ============ -->
-<div class="modal-overlay center-modal" id="modalPackFail">
-  <div class="offline-modal" style="border-color: var(--red); box-shadow: 0 0 40px rgba(239,68,68,0.4);">
-    <h2 style="font-family: var(--display); font-size: 22px; color: var(--red); margin-bottom: 8px;">❌ Payment Failed</h2>
-    <p style="color:white; font-size:14px;" id="packFailMsg">Please try again.</p>
-    <button class="jackpot-btn" id="btnPackFailClose" style="background: linear-gradient(135deg, var(--red), #b91c1c); box-shadow: 0 4px 0 #7f1d1d; margin-top: 16px;">CLOSE</button>
+<!-- ============ MODAL: THEME UNLOCK CELEBRATION ============ -->
+<div class="modal-overlay center-modal" id="modalThemeUnlock">
+  <div class="theme-unlock-modal">
+    <div class="theme-unlock-flag" id="themeUnlockFlag">🌍</div>
+    <div class="theme-unlock-title">🌍 NEW WORLD UNLOCKED!</div>
+    <div class="theme-unlock-name" id="themeUnlockName">Theme Name</div>
+    <div class="theme-unlock-desc" id="themeUnlockDesc">A beautiful new world awaits.</div>
+    <button class="theme-unlock-equip-btn" id="btnThemeUnlockEquip">✨ EQUIP NOW</button>
+    <button class="theme-unlock-later-btn" id="btnThemeUnlockLater">Maybe Later</button>
   </div>
 </div>
 
@@ -3832,9 +3816,10 @@ const STATE = {
     bank: 0
   },
   ownedSkins: ['💰'],
-  ownedThemes: ['default', 'forest', 'space_lite'],
+  ownedThemes: ['default'],
   equippedSkin: '💰',
   equippedTheme: 'default',
+  lastThemeUnlockShown: 0,
   lastSeen: Date.now(),
   lastSpin: 0,
   lastDaily: 0,
@@ -3842,27 +3827,36 @@ const STATE = {
   comboCount: 0,
   comboLastTap: 0,
   goldenButtonNext: Date.now() + 30000 + Math.random() * 60000,
-  // ===== Monetization fields =====
-  // NOTE: In production these MUST be sourced from your backend/database, not client storage.
-  packType: 'free',                  // 'free' | 'starter' | 'legend'
-  starterPackPurchased: false,
-  legendPackPurchased: false,
-  starterBoostUntil: 0,              // 24h x2 income boost timestamp
-  adsRemovedUntil: 0,                // 24h ad-free timestamp (starter)
-  permanentAdsRemoved: false,        // legend perk
-  tapIncomeMultiplier: 1,            // legend = 2 permanent
-  autoIncomeMultiplier: 1,           // legend = 2 permanent
-  offlineEarningLimitHours: 2,       // free = 2, starter = 6, legend = 24
-  bonusWheelSpins: 0,                // accumulates from packs
-  badge: null,                       // null | 'starter' | 'legend'
-  goldenButtonChanceMult: 1,         // legend = 2x more frequent
-  // Pseudo-account fields (would come from real auth in production):
+  // ===== Milestone reward fields =====
+  starterBoostUntil: 0,
+  offlineEarningLimitHours: 2,
+  bonusWheelSpins: 0,
+  tapIncomeMultiplier: 1,
+  autoIncomeMultiplier: 1,
   userId: null,
   email: null
 };
 
 const SAVE_KEY = 'tapTycoon';
 const DEFAULT_STATE = JSON.parse(JSON.stringify(STATE));
+
+function getDefaultState() {
+  return {
+    coins: 0, totalCoins: 0, totalTaps: 0, level: 1, levelXP: 0,
+    prestigeStars: 0, prestigeMult: 1, totalPrestiges: 0,
+    starShop: {}, achievements: {}, achievementsUnlocked: 0,
+    upgrades: { clickPower: 0, multiplier: 0, crit: 0, combo: 0 },
+    auto: { cursor: 0, helper: 0, machine: 0, factory: 0, bank: 0 },
+    ownedSkins: ['💰'], equippedSkin: '💰',
+    ownedThemes: ['default'], equippedTheme: 'default', lastThemeUnlockShown: 0,
+    lastSeen: Date.now(), lastSpin: 0, lastDaily: 0, dailyStreak: 0,
+    comboCount: 0, comboLastTap: 0,
+    goldenButtonNext: Date.now() + 30000 + Math.random() * 60000,
+    starterBoostUntil: 0, offlineEarningLimitHours: 2,
+    bonusWheelSpins: 0, tapIncomeMultiplier: 1, autoIncomeMultiplier: 1,
+    userId: null, email: null
+  };
+}
 
 function getDefaultState() {
   const state = JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -3972,9 +3966,9 @@ const ACHIEVEMENTS = [
   { id: 'stars100',   icon: '✨', name: 'Constellation',  desc: 'Earn 100 total stars',  category: 'prestige', goal: 100,      check: () => STATE.prestigeStars + (STATE._spentStars||0) },
 
   // Collection
-  { id: 'allFreeThemes', icon: '🌍', name: 'World Traveler', desc: 'Equip all 3 free themes (any time)', category: 'collect', goal: 3, check: () => STATE._equippedThemeHistory ? STATE._equippedThemeHistory.length : 0 },
-  { id: 'starterPack',  icon: '🛂', name: 'Globetrotter',  desc: 'Own the Starter Pack',  category: 'collect', goal: 1, check: () => STATE.starterPackPurchased ? 1 : 0 },
-  { id: 'legendPack',   icon: '👑', name: 'VIP Tycoon',    desc: 'Own the Legend Pack',   category: 'collect', goal: 1, check: () => STATE.legendPackPurchased ? 1 : 0 },
+  { id: 'allFreeThemes', icon: '🌍', name: 'World Traveler', desc: 'Unlock 3 world themes',  category: 'collect', goal: 3,  check: () => (STATE.ownedThemes||[]).length },
+  { id: 'starterPack',  icon: '🛂', name: 'Globetrotter',  desc: 'Unlock 5 world themes',  category: 'collect', goal: 5,  check: () => (STATE.ownedThemes||[]).length },
+  { id: 'legendPack',   icon: '👑', name: 'World Master',   desc: 'Unlock 10 world themes', category: 'collect', goal: 10, check: () => (STATE.ownedThemes||[]).length },
   { id: 'allSkins5',    icon: '🎨', name: 'Skin Collector', desc: 'Own 5 button skins',    category: 'collect', goal: 5, check: () => (STATE.ownedSkins||[]).length },
 
   // Special / fun
@@ -4002,11 +3996,11 @@ const SKINS = [
   { id: '🚀', name: 'Rocket Tap', cost: 2500000, bg: 'radial-gradient(circle at 30% 30%, #fff, #fb7185 40%, #be123c 80%)' },
   { id: '🔥', name: 'Inferno', cost: 10000000, bg: 'radial-gradient(circle at 30% 30%, #fff, #fb923c 40%, #c2410c 80%)' },
   { id: '⚡', name: 'Thunder', cost: 50000000, bg: 'radial-gradient(circle at 30% 30%, #fff, #fde047 40%, #a16207 80%)' },
-  // ===== Exclusive Pack Skins =====
-  { id: '🎁', name: 'Starter Gift', cost: -1, exclusive: 'starter', bg: 'radial-gradient(circle at 30% 30%, #fff, #4ade80 40%, #15803d 80%)' },
-  { id: '💠', name: 'Legend Crystal', cost: -1, exclusive: 'legend', bg: 'radial-gradient(circle at 30% 30%, #fff, #a78bfa 40%, #5b21b6 80%)' },
-  { id: '🏆', name: 'Champion Cup', cost: -1, exclusive: 'legend', bg: 'radial-gradient(circle at 30% 30%, #fff, #fbbf24 40%, #92400e 80%)' },
-  { id: '🌌', name: 'Galaxy Orb', cost: -1, exclusive: 'legend', bg: 'radial-gradient(circle at 30% 30%, #fff, #ec4899 30%, #6366f1 60%, #1e1b4b 90%)' }
+  // ===== Level-Locked Bonus Skins =====
+  { id: '🎁', name: 'Starter Gift',   cost: -1, unlockLevel: 10, bg: 'radial-gradient(circle at 30% 30%, #fff, #4ade80 40%, #15803d 80%)' },
+  { id: '💠', name: 'Legend Crystal', cost: -1, unlockLevel: 50, bg: 'radial-gradient(circle at 30% 30%, #fff, #a78bfa 40%, #5b21b6 80%)' },
+  { id: '🏆', name: 'Champion Cup',   cost: -1, unlockLevel: 70, bg: 'radial-gradient(circle at 30% 30%, #fff, #fbbf24 40%, #92400e 80%)' },
+  { id: '🌌', name: 'Galaxy Orb',     cost: -1, unlockLevel: 90, bg: 'radial-gradient(circle at 30% 30%, #fff, #ec4899 30%, #6366f1 60%, #1e1b4b 90%)' }
 ];
 
 // ============================================================
@@ -4017,189 +4011,47 @@ const SKINS = [
 // Each theme defines: bg colors, particle type, button style.
 // ============================================================
 const THEMES = [
-  // ===== FREE TIER =====
-  { id: 'default', tier: 'free', name: 'Classic', flag: '✨',
-    bg1: '#1a0b2e', bg2: '#2d1b4e', bg3: '#4a2c6d',
-    particle: 'stars', buttonStyle: 'classic',
-    desc: 'The original cosmic vibe' },
-  { id: 'forest', tier: 'free', name: 'Forest', flag: '🌲',
-    bg1: '#0f2419', bg2: '#1a3d29', bg3: '#2d6a3f',
-    particle: 'leaves', buttonStyle: 'classic',
-    desc: 'Peaceful woodland retreat' },
-  { id: 'space_lite', tier: 'free', name: 'Space Lite', flag: '🌌',
-    bg1: '#08081a', bg2: '#1a1a3a', bg3: '#2d2d6e',
-    particle: 'stars', buttonStyle: 'classic',
-    desc: 'Stargazer\'s window' },
-
-  // ===== STARTER PACK — CITY THEMES (slightly punchier bg gradients) =====
-  { id: 'dubai', tier: 'starter', name: 'Dubai Luxury', flag: '🇦🇪',
-    bg1: '#1f0c00', bg2: '#6e360c', bg3: '#ffbf3a',
-    particle: 'dubai_gold', buttonStyle: 'dubai_crown',
-    backdrop: 'dubai',
-    desc: 'Burj skyline & sunset gold' },
-  { id: 'tokyo', tier: 'starter', name: 'Tokyo Neon', flag: '🇯🇵',
-    bg1: '#0d0019', bg2: '#360a52', bg3: '#c026a8',
-    particle: 'sakura', buttonStyle: 'tokyo_neon',
-    backdrop: 'tokyo',
-    desc: 'Tokyo Tower & neon nightscape' },
-  { id: 'newyork', tier: 'starter', name: 'New York Money', flag: '🇺🇸',
-    bg1: '#06040a', bg2: '#100a18', bg3: '#2a1d0c',
-    particle: 'dollars', buttonStyle: 'nyc_gold',
-    backdrop: 'newyork',
-    desc: 'Black & gold luxury skyline' },
-  { id: 'paris', tier: 'starter', name: 'Paris Royal', flag: '🇫🇷',
-    bg1: '#1f003a', bg2: '#360c5e', bg3: '#5a2a8e',
-    particle: 'crowns', buttonStyle: 'paris_royal',
-    backdrop: 'paris',
-    desc: 'Eiffel Tower & royal night' },
-
-  // ===== LEGEND PACK — FANTASY THEMES (vivid pulsing backgrounds) =====
-  { id: 'dragon', tier: 'legend', name: 'Dragon Empire', flag: '🐉',
-    bg1: '#240000', bg2: '#7a0a0a', bg3: '#ff3a1a',
-    particle: 'embers', buttonStyle: 'fire_orb',
-    desc: 'Red fire sky & dragon flames' },
-  { id: 'cyberpunk', tier: 'legend', name: 'Cyberpunk Future', flag: '🤖',
-    bg1: '#0a0a3a', bg2: '#280a7a', bg3: '#b83df0',
-    particle: 'circuits', buttonStyle: 'hologram',
-    desc: 'Neon city & holograms' },
-  { id: 'galaxy', tier: 'legend', name: 'Space Galaxy', flag: '🚀',
-    bg1: '#000018', bg2: '#0e0a52', bg3: '#5a2ad6',
-    particle: 'galaxy', buttonStyle: 'plasma_orb',
-    desc: 'Stars & nebulae' },
-  { id: 'atlantis', tier: 'legend', name: 'Atlantis', flag: '🌊',
-    bg1: '#00253c', bg2: '#0e527a', bg3: '#22b8e6',
-    particle: 'bubbles', buttonStyle: 'crystal_aqua',
-    desc: 'Underwater glow & crystals' },
-  { id: 'inferno', tier: 'legend', name: 'Demon Inferno', flag: '🔥',
-    bg1: '#100000', bg2: '#4a0c06', bg3: '#ff6a1a',
-    particle: 'sparks', buttonStyle: 'magma',
-    desc: 'Lava world & magma button' }
+  { id: 'default',   unlockLevel: 1,   name: 'Classic',              flag: '✨',
+    bg1: '#1a0b2e', bg2: '#2d1b4e', bg3: '#4a2c6d', accentColor: '#ffd23f', glowColor: 'rgba(255,210,63,0.4)',
+    particle: 'stars',      buttonStyle: 'classic',       desc: 'The original cosmic vibe' },
+  { id: 'forest',    unlockLevel: 3,   name: 'Forest Gold',          flag: '🌲',
+    bg1: '#0f2419', bg2: '#1a3d29', bg3: '#2d6a3f', accentColor: '#4ade80', glowColor: 'rgba(74,222,128,0.4)',
+    particle: 'leaves',     buttonStyle: 'forest_gold',   desc: 'Ancient woodland riches' },
+  { id: 'dubai',     unlockLevel: 5,   name: 'Dubai Royal Gold',     flag: '🇦🇪',
+    bg1: '#1f0c00', bg2: '#6e360c', bg3: '#ffbf3a', accentColor: '#ffd23f', glowColor: 'rgba(255,191,58,0.5)',
+    particle: 'dubai_gold', buttonStyle: 'dubai_crown',  backdrop: 'dubai',    desc: 'Burj skyline & sunset gold' },
+  { id: 'tokyo',     unlockLevel: 15,  name: 'Tokyo Neon Nights',    flag: '🇯🇵',
+    bg1: '#0d0019', bg2: '#360a52', bg3: '#c026a8', accentColor: '#ff5e9c', glowColor: 'rgba(255,94,156,0.4)',
+    particle: 'sakura',     buttonStyle: 'tokyo_neon',   backdrop: 'tokyo',    desc: 'Tokyo Tower & neon nightscape' },
+  { id: 'newyork',   unlockLevel: 30,  name: 'New York Billionaire', flag: '🇺🇸',
+    bg1: '#06040a', bg2: '#100a18', bg3: '#2a1d0c', accentColor: '#ffd23f', glowColor: 'rgba(255,210,63,0.3)',
+    particle: 'dollars',    buttonStyle: 'nyc_gold',     backdrop: 'newyork',  desc: 'Black & gold luxury skyline' },
+  { id: 'paris',     unlockLevel: 60,  name: 'Paris Diamond Palace', flag: '🇫🇷',
+    bg1: '#1f003a', bg2: '#360c5e', bg3: '#5a2a8e', accentColor: '#c084fc', glowColor: 'rgba(192,132,252,0.4)',
+    particle: 'crowns',     buttonStyle: 'paris_royal',  backdrop: 'paris',    desc: 'Eiffel Tower & royal night' },
+  { id: 'monaco',    unlockLevel: 80,  name: 'Monaco Supercar',      flag: '🏎️',
+    bg1: '#0a0018', bg2: '#1e0a3a', bg3: '#ff2d92', accentColor: '#ff2d92', glowColor: 'rgba(255,45,146,0.5)',
+    particle: 'stars',      buttonStyle: 'monaco_car',    desc: 'Grand Prix speed & glamour' },
+  { id: 'dragon',    unlockLevel: 100, name: 'Dragon Emperor',        flag: '🐉',
+    bg1: '#240000', bg2: '#7a0a0a', bg3: '#ff3a1a', accentColor: '#ff6a1a', glowColor: 'rgba(255,58,26,0.5)',
+    particle: 'embers',     buttonStyle: 'fire_orb',      desc: 'Red fire sky & dragon flames' },
+  { id: 'cyberpunk', unlockLevel: 120, name: 'Cyberpunk 2099',        flag: '🤖',
+    bg1: '#0a0a3a', bg2: '#280a7a', bg3: '#b83df0', accentColor: '#00e5ff', glowColor: 'rgba(0,229,255,0.4)',
+    particle: 'circuits',   buttonStyle: 'hologram',      desc: 'Neon city & holograms' },
+  { id: 'galaxy',    unlockLevel: 140, name: 'Galaxy Infinity',       flag: '🚀',
+    bg1: '#000018', bg2: '#0e0a52', bg3: '#5a2ad6', accentColor: '#a855f7', glowColor: 'rgba(168,85,247,0.4)',
+    particle: 'galaxy',     buttonStyle: 'plasma_orb',    desc: 'Stars & nebulae' },
+  { id: 'atlantis',  unlockLevel: 160, name: 'Atlantis Lost Empire',  flag: '🌊',
+    bg1: '#00253c', bg2: '#0e527a', bg3: '#22b8e6', accentColor: '#22b8e6', glowColor: 'rgba(34,184,230,0.4)',
+    particle: 'bubbles',    buttonStyle: 'crystal_aqua',  desc: 'Underwater glow & crystals' },
+  { id: 'inferno',   unlockLevel: 180, name: 'Demon Inferno',         flag: '🔥',
+    bg1: '#100000', bg2: '#4a0c06', bg3: '#ff6a1a', accentColor: '#ff6a1a', glowColor: 'rgba(255,106,26,0.5)',
+    particle: 'sparks',     buttonStyle: 'magma',          desc: 'Lava world & magma button' }
 ];
 
-const PACK_FIELD_KEYS = [
-  'packType',
-  'starterPackPurchased',
-  'legendPackPurchased',
-  'starterBoostUntil',
-  'adsRemovedUntil',
-  'permanentAdsRemoved',
-  'tapIncomeMultiplier',
-  'autoIncomeMultiplier',
-  'offlineEarningLimitHours',
-  'bonusWheelSpins',
-  'badge',
-  'goldenButtonChanceMult'
-];
+// Pack constants removed — themes now level-based
 
-const FREE_THEME_IDS = THEMES.filter(t => t.tier === 'free').map(t => t.id);
-const STARTER_THEME_IDS = THEMES.filter(t => t.tier === 'starter').map(t => t.id);
-const LEGEND_THEME_IDS = THEMES.filter(t => t.tier === 'legend').map(t => t.id);
-const STARTER_SKIN_IDS = SKINS.filter(s => s.exclusive === 'starter').map(s => s.id);
-const LEGEND_SKIN_IDS = SKINS.filter(s => s.exclusive === 'legend').map(s => s.id);
 
-function getDefaultPackFields() {
-  const defaults = getDefaultState();
-  return PACK_FIELD_KEYS.reduce((out, key) => {
-    out[key] = defaults[key];
-    return out;
-  }, {});
-}
-
-function sanitizeCloudProgress(data) {
-  const progress = { ...(data || {}) };
-  PACK_FIELD_KEYS.forEach(key => delete progress[key]);
-  delete progress.ownedThemes;
-  return progress;
-}
-
-function addUnique(list, value) {
-  if (!list.includes(value)) list.push(value);
-}
-
-function reconcilePackEntitlements() {
-  const defaults = getDefaultPackFields();
-
-  if (STATE.legendPackPurchased) {
-    // Legend includes Starter — make sure both ownership flags are set
-    // so achievements / pack-checks that look at the starter flag work too.
-    STATE.starterPackPurchased = true;
-    STATE.packType = 'legend';
-  } else if (STATE.starterPackPurchased) {
-    STATE.packType = 'starter';
-    STATE.legendPackPurchased = false;
-    STATE.permanentAdsRemoved = defaults.permanentAdsRemoved;
-    STATE.tapIncomeMultiplier = defaults.tapIncomeMultiplier;
-    STATE.autoIncomeMultiplier = defaults.autoIncomeMultiplier;
-    STATE.goldenButtonChanceMult = defaults.goldenButtonChanceMult;
-    if (STATE.badge === 'legend') STATE.badge = 'starter';
-  } else {
-    Object.assign(STATE, defaults);
-  }
-
-  const allowedThemes = [...FREE_THEME_IDS];
-  if (STATE.starterPackPurchased || STATE.legendPackPurchased) allowedThemes.push(...STARTER_THEME_IDS);
-  if (STATE.legendPackPurchased) allowedThemes.push(...LEGEND_THEME_IDS);
-  STATE.ownedThemes = allowedThemes.filter((id, index) => allowedThemes.indexOf(id) === index);
-  if (!STATE.ownedThemes.includes(STATE.equippedTheme)) STATE.equippedTheme = FREE_THEME_IDS[0] || 'default';
-
-  const skinById = new Map(SKINS.map(s => [s.id, s]));
-  const keptSkins = [];
-  (Array.isArray(STATE.ownedSkins) ? STATE.ownedSkins : []).forEach(id => {
-    const skin = skinById.get(id);
-    if (!skin) return;
-    if (!skin.exclusive) addUnique(keptSkins, id);
-    if (skin.exclusive === 'starter' && (STATE.starterPackPurchased || STATE.legendPackPurchased)) addUnique(keptSkins, id);
-    if (skin.exclusive === 'legend' && STATE.legendPackPurchased) addUnique(keptSkins, id);
-  });
-  if (SKINS[0]) addUnique(keptSkins, SKINS[0].id);
-  if (STATE.starterPackPurchased || STATE.legendPackPurchased) STARTER_SKIN_IDS.forEach(id => addUnique(keptSkins, id));
-  if (STATE.legendPackPurchased) LEGEND_SKIN_IDS.forEach(id => addUnique(keptSkins, id));
-  STATE.ownedSkins = keptSkins;
-  if (!STATE.ownedSkins.includes(STATE.equippedSkin)) STATE.equippedSkin = SKINS[0] ? SKINS[0].id : null;
-}
-
-const WHEEL_PRIZES = [
-  { label: '+10', amount: 0.1, color: '#ef4444', text: 'white' },
-  { label: '+50', amount: 0.5, color: '#fb923c', text: 'white' },
-  { label: '+100', amount: 1, color: '#fde047', text: '#000' },
-  { label: '+25', amount: 0.25, color: '#a855f7', text: 'white' },
-  { label: 'JACKPOT', amount: 5, color: '#ec4899', text: 'white' },
-  { label: '+200', amount: 2, color: '#22c55e', text: 'white' },
-  { label: '+75', amount: 0.75, color: '#06b6d4', text: 'white' },
-  { label: '+500', amount: 4, color: '#f59e0b', text: 'white' }
-];
-
-const DAILY_REWARDS = [50, 200, 500, 1500, 5000, 15000, 50000];
-
-// ---------- FORMAT ----------
-function fmt(n) {
-  if (n < 1000) return Math.floor(n).toString();
-  const units = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
-  let i = 0;
-  while (n >= 1000 && i < units.length - 1) { n /= 1000; i++; }
-  return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + units[i];
-}
-
-function fmtTime(secs) {
-  if (secs < 60) return `${Math.floor(secs)}s`;
-  if (secs < 3600) return `${Math.floor(secs/60)}m ${Math.floor(secs%60)}s`;
-  return `${Math.floor(secs/3600)}h ${Math.floor((secs%3600)/60)}m`;
-}
-
-// ---------- COMPUTED ----------
-function activeStarterBoost() {
-  return Date.now() < STATE.starterBoostUntil ? 2 : 1;
-}
-function packTapMult() { return STATE.tapIncomeMultiplier || 1; }
-function packAutoMult() { return STATE.autoIncomeMultiplier || 1; }
-
-// Permanent +2% to all earnings per player level. Compounds with everything
-// else (prestige, packs, star shop, achievements). Driven entirely by
-// STATE.level so it persists in saveProgress without any new field.
-//   Level   1 → ×1.02
-//   Level  25 → ×1.50
-//   Level  50 → ×2.00
-//   Level 100 → ×3.00
 function levelMult() { return 1 + (STATE.level - 1) * 0.02; }
 
 // Star Shop helpers
@@ -4220,6 +4072,8 @@ function starStartCoins() {
 
 // Achievement bonus: each unlocked achievement grants +1% to all earnings
 function achievementBonus() { return 1 + (STATE.achievementsUnlocked || 0) * 0.01; }
+
+function activeStarterBoost() { return Date.now() < (STATE.starterBoostUntil || 0) ? 2 : 1; }
 
 function clickValue() {
   const base = 1 + STATE.upgrades.clickPower;
@@ -4314,6 +4168,7 @@ function addXP(amt) {
 //   • Every 25 levels → +1 hour boost AND +2 wheel spins (mega celebration)
 // =================================================================
 function onLevelUp() {
+  const prevLevel = STATE.level - 1;
   Audio.levelup();
   const lvl = STATE.level;
 
@@ -4377,6 +4232,8 @@ function onLevelUp() {
 
   // Update coin tier visuals (with celebration if tier changed)
   applyTierVisuals(true);
+  // Check for newly unlocked themes
+  checkThemeUnlocks(prevLevel, STATE.level);
 }
 
 // ---------- TAP ----------
@@ -4751,17 +4608,17 @@ function renderButtonSkins(list) {
   items.forEach(item => {
     const isOwned = owned.includes(item.id);
     const isEquipped = item.id === equipped;
-    const isExclusive = item.exclusive;
-    const isPackLocked = isExclusive && !isOwned;
+    const isLevelLocked = item.unlockLevel && STATE.level < item.unlockLevel && !isOwned;
+    const isLevelUnlocked = item.unlockLevel && STATE.level >= item.unlockLevel && !isOwned;
 
     const card = document.createElement('div');
-    card.className = 'skin-card' + (isPackLocked ? ' locked' : '') + (isEquipped ? ' equipped' : '');
+    card.className = 'skin-card' + (isLevelLocked ? ' locked' : '') + (isEquipped ? ' equipped' : '');
 
     let statusText;
     if (isEquipped) statusText = 'EQUIPPED ✓';
     else if (isOwned) statusText = 'TAP TO USE';
-    else if (isExclusive === 'starter') statusText = '🎁 STARTER PACK';
-    else if (isExclusive === 'legend') statusText = '👑 LEGEND PACK';
+    else if (isLevelLocked) statusText = `🔒 Lvl ${item.unlockLevel}`;
+    else if (isLevelUnlocked) statusText = '✓ Tap to unlock free!';
     else statusText = '🪙' + fmt(item.cost);
 
     card.innerHTML = `
@@ -4772,12 +4629,13 @@ function renderButtonSkins(list) {
 
     card.onclick = () => {
       if (isEquipped) return;
-      if (isPackLocked) {
-        toast(`Unlock with the ${isExclusive === 'legend' ? 'Legend' : 'Starter'} Pack!`,
-              isExclusive === 'legend' ? '👑' : '🎁');
-        openModal('packs');
-        document.getElementById('modalSkins').classList.remove('active');
+      if (isLevelLocked) {
+        toast(`Reach Level ${item.unlockLevel} to unlock this skin!`, '🔒');
         return;
+      }
+      if (isLevelUnlocked && !isOwned) {
+        STATE.ownedSkins.push(item.id);
+        isOwned = true;
       }
       if (isOwned) {
         STATE.equippedSkin = item.id;
@@ -4807,124 +4665,45 @@ function renderButtonSkins(list) {
 // THEME COLLECTION — sectioned by tier (free / starter / legend)
 // =================================================================
 function renderThemeCollection(list) {
-  list.className = ''; // not a skin-grid, has internal structure
+  list.className = '';
   list.innerHTML = '';
-
-  const sections = [
-    { tier: 'free',    label: 'FREE THEMES',    icon: '🌍', priceTag: 'Free' },
-    { tier: 'starter', label: 'STARTER THEMES', icon: '🛂', priceTag: '$0.99' },
-    { tier: 'legend',  label: 'LEGEND THEMES',  icon: '👑', priceTag: '$3.99' }
-  ];
-
-  sections.forEach(sec => {
-    // Section header
-    const header = document.createElement('div');
-    header.className = 'theme-section-header';
-    header.innerHTML = `
-      <div class="theme-section-icon ${sec.tier}">${sec.icon}</div>
-      <div class="theme-section-title">${sec.label}</div>
-      <div class="theme-section-pricetag">${sec.priceTag}</div>
-    `;
-    list.appendChild(header);
-
-    // Theme grid
-    const grid = document.createElement('div');
-    grid.className = 'theme-grid';
-    const themes = THEMES.filter(t => t.tier === sec.tier);
-    let anyLocked = false;
-
-    themes.forEach(theme => {
-      const isOwned = STATE.ownedThemes.includes(theme.id);
-      const isEquipped = STATE.equippedTheme === theme.id;
-      const isFree = theme.tier === 'free';
-      const isLocked = !isFree && !isOwned;
-      if (isLocked) anyLocked = true;
-
-      const card = document.createElement('div');
-      card.className = 'theme-card' + (isEquipped ? ' equipped' : '') + (isLocked ? ' locked' : '');
-
-      const bgGradient = `linear-gradient(135deg, ${theme.bg1} 0%, ${theme.bg2} 50%, ${theme.bg3} 100%)`;
-
-      let statusText;
-      if (isEquipped) statusText = '✔ ACTIVE';
-      else if (isOwned || isFree) statusText = 'Tap to equip';
-      else statusText = '';
-
-      let lockOverlay = '';
-      if (isLocked) {
-        const packLabel = sec.tier === 'starter' ? 'Buy Starter Pack' : 'Buy Legend Pack';
-        const packClass = sec.tier;
-        lockOverlay = `
-          <div class="theme-card-lock">
-            <div class="lock-icon">🔒</div>
-            <div class="lock-pack ${packClass}">${packLabel}</div>
-          </div>
-        `;
-      }
-
-      card.innerHTML = `
-        <div class="theme-card-bg" style="background: ${bgGradient};"></div>
-        <div class="theme-card-overlay">
-          <div class="theme-card-flag">${theme.flag}</div>
-          <div class="theme-card-meta">
-            <div class="theme-card-name">${theme.name}</div>
-            <div class="theme-card-status">${statusText}</div>
-          </div>
-        </div>
-        ${lockOverlay}
-      `;
-
-      card.onclick = () => {
-        if (isEquipped) return;
-        if (isLocked) {
-          Audio.tap();
-          openModal('packs');
-          document.getElementById('modalSkins').classList.remove('active');
-          return;
-        }
-        STATE.equippedTheme = theme.id;
-        // Track free-theme equip history for the World Traveler achievement
-        if (!STATE._equippedThemeHistory) STATE._equippedThemeHistory = [];
-        if (theme.tier === 'free' && !STATE._equippedThemeHistory.includes(theme.id)) {
-          STATE._equippedThemeHistory.push(theme.id);
-        }
-        applyTheme(theme);
-        Audio.buy();
-        toast(`Equipped ${theme.name}!`, theme.flag);
-        if (Auth && Auth.currentUser) Auth.saveProgress();
-        saveGame();
-        renderSkins();
-      };
-      grid.appendChild(card);
-    });
-
-    list.appendChild(grid);
-
-    // Section CTA (only for locked sections)
-    if (anyLocked && (sec.tier === 'starter' || sec.tier === 'legend')) {
-      const cta = document.createElement('div');
-      cta.className = 'theme-section-cta';
-      const isLegend = sec.tier === 'legend';
-      const owned = isLegend ? STATE.legendPackPurchased : STATE.starterPackPurchased;
-      if (!owned) {
-        cta.innerHTML = `
-          <p>Unlock all ${themes.length} ${isLegend ? 'legendary' : 'city'} themes with the ${isLegend ? 'Legend' : 'Starter'} pack</p>
-          <button class="${sec.tier}" data-open-pack="${sec.tier}">
-            ${isLegend ? '👑 Become Legend $3.99' : '🌍 Unlock Worlds $0.99'}
-          </button>
-        `;
-        list.appendChild(cta);
-        cta.querySelector('button').onclick = (e) => {
-          e.stopPropagation();
-          Audio.tap();
-          openModal('packs');
-          document.getElementById('modalSkins').classList.remove('active');
-        };
-      }
+  const header = document.createElement('div');
+  header.className = 'world-themes-header';
+  header.innerHTML = '<strong>🌍 Level up to unlock new worlds!</strong>';
+  list.appendChild(header);
+  THEMES.forEach(theme => {
+    const isOwned = STATE.ownedThemes.includes(theme.id);
+    const isActive = STATE.equippedTheme === theme.id;
+    const bgGradient = `linear-gradient(135deg, ${theme.bg1} 0%, ${theme.bg2} 50%, ${theme.bg3} 100%)`;
+    const card = document.createElement('div');
+    card.className = 'theme-card' + (isActive ? ' equipped' : '') + (!isOwned ? ' locked' : '');
+    const statusText = isActive ? '✔ ACTIVE' : (isOwned ? 'Tap to equip' : `🔒 Level ${theme.unlockLevel}`);
+    let lockHtml = '';
+    if (!isOwned) {
+      const pct = Math.min(100, Math.floor((STATE.level / theme.unlockLevel) * 100));
+      lockHtml = `<div class="theme-card-lock"><div class="lock-icon">🔒</div><div class="lock-pack" style="font-size:11px">Lv ${theme.unlockLevel} — ${STATE.level}/${theme.unlockLevel} (${pct}%)</div></div>`;
     }
+    card.innerHTML = `
+      <div class="theme-card-bg" style="background:${bgGradient};"></div>
+      <div class="theme-card-overlay">
+        <div class="theme-card-flag">${theme.flag}</div>
+        <div class="theme-card-meta">
+          <div class="theme-card-name">${theme.name}</div>
+          <div class="theme-card-status">${statusText}</div>
+        </div>
+      </div>${lockHtml}`;
+    card.onclick = () => {
+      if (!isOwned || isActive) return;
+      STATE.equippedTheme = theme.id;
+      applyTheme(theme);
+      Audio.buy();
+      toast(`Equipped ${theme.name}!`, theme.flag);
+      if (Auth && Auth.currentUser) Auth.saveProgress();
+      saveGame();
+      renderSkins();
+    };
+    list.appendChild(card);
   });
-
-  // Footer hint
   const hint = document.createElement('p');
   hint.style.cssText = 'text-align:center; font-size:11px; color:rgba(255,255,255,0.4); margin-top:16px; padding-bottom:8px;';
   hint.textContent = 'Each theme transforms the entire game — backgrounds, particles, and your tap button.';
@@ -5197,611 +4976,102 @@ function spinWheel() {
   }, 4100);
 }
 
-// =================================================================
-// MONETIZATION / PACKS SYSTEM
-// =================================================================
-// SECURITY NOTE:
-// In production, ALL pack-unlock logic must run on a backend server
-// after PayPal webhook verification. The client should ONLY be
-// notified by the server (e.g., via authenticated API call) that
-// a pack is unlocked. The functions below simulate that flow.
-//
-// This client-side implementation is for DEMO/PROTOTYPE purposes.
-// A separate file (paypal_backend_template.js) provides the
-// production-ready Node.js backend skeleton.
-// =================================================================
+// Pack system replaced with level-based theme unlocks
 
-const PACKS = {
-  free: {
-    id: 'free',
-    name: 'Free Pack',
-    icon: '🌍',
-    price: 0,
-    priceLabel: 'Free',
-    tagline: 'Currently Active',
-    headline: 'Start your tycoon journey',
-    features: [
-      '3 free themes (Classic, Forest, Space Lite)',
-      'Basic tap gameplay',
-      'Free wheel spin every 5 min',
-      'Offline earnings: 2 hours',
-      'Daily rewards (normal)'
-    ]
-  },
-  starter: {
-    id: 'starter',
-    name: 'Starter World Pack',
-    icon: '🌍',
-    price: 0.99,
-    priceLabel: '$0.99',
-    tagline: 'Best for travelers 🌍',
-    headline: 'Travel the world instantly!',
-    ribbon: 'POPULAR',
-    buttonLabel: 'Unlock Worlds $0.99',
-    themes: ['dubai', 'tokyo', 'newyork', 'paris'],
-    features: [
-      'Dubai Luxury 🇦🇪',
-      'Tokyo Neon 🇯🇵',
-      'New York Money 🇺🇸',
-      'Paris Royal 🇫🇷',
-      '+ 50,000 starter coins',
-      '+ 24h ×2 income boost',
-      '+ Remove ads for 24h',
-      '⭐ Starter badge'
-    ]
-  },
-  legend: {
-    id: 'legend',
-    name: 'Legend Multiverse Pack',
-    icon: '👑',
-    price: 3.99,
-    priceLabel: '$3.99',
-    tagline: 'Best for VIP players 👑',
-    headline: 'Own impossible worlds.',
-    ribbon: 'BEST',
-    buttonLabel: 'Become Legend $3.99',
-    themes: ['dragon', 'cyberpunk', 'galaxy', 'atlantis', 'inferno'],
-    features: [
-      'Dragon Empire 🐉',
-      'Cyberpunk Future 🤖',
-      'Space Galaxy 🚀',
-      'Atlantis 🌊',
-      'Demon Inferno 🔥',
-      '+ 500,000 coins',
-      '+ Permanent ×2 tap & auto income',
-      '+ Remove ads PERMANENTLY',
-      '+ 24h offline earnings',
-      '+ Golden buttons appear 2× more',
-      '👑 Legend badge'
-    ]
-  }
-};
+
 
 // =================================================================
-// PACK UNLOCK — applies the rewards
-// In production, this is called ONLY after a server confirms
-// the payment is verified and webhook-validated.
+// LEVEL-BASED THEME UNLOCKS
 // =================================================================
-function applyStarterPack() {
-  if (STATE.starterPackPurchased) return false;
-  STATE.starterPackPurchased = true;
-  if (STATE.packType !== 'legend') STATE.packType = 'starter';
-
-  // 50,000 coins
-  STATE.coins += 50000;
-  STATE.totalCoins += 50000;
-
-  // 4 exclusive city themes
-  ['dubai', 'tokyo', 'newyork', 'paris'].forEach(t => {
-    if (!STATE.ownedThemes.includes(t)) STATE.ownedThemes.push(t);
-  });
-  // Legacy: starter gift skin (still kept for any existing skin pages)
-  if (!STATE.ownedSkins.includes('🎁')) STATE.ownedSkins.push('🎁');
-
-  // 24-hour x2 income boost
-  STATE.starterBoostUntil = Math.max(STATE.starterBoostUntil, Date.now() + 24 * 60 * 60 * 1000);
-
-  // Offline earnings 6h
-  STATE.offlineEarningLimitHours = Math.max(STATE.offlineEarningLimitHours, 6);
-
-  // Bonus wheel spins
-  STATE.bonusWheelSpins = (STATE.bonusWheelSpins || 0) + 3;
-
-  // Remove ads for 24h
-  STATE.adsRemovedUntil = Math.max(STATE.adsRemovedUntil, Date.now() + 24 * 60 * 60 * 1000);
-
-  // Starter badge (legend overrides)
-  if (STATE.badge !== 'legend') STATE.badge = 'starter';
-
-  return true;
-}
-
-function applyLegendPack() {
-  if (STATE.legendPackPurchased) return false;
-  applyStarterPack();
-  
-  STATE.legendPackPurchased = true;
-  STATE.packType = 'legend';
-
-  // 500,000 coins
-  STATE.coins += 500000;
-  STATE.totalCoins += 500000;
-
-  // 5 exclusive fantasy themes
-  ['dragon', 'cyberpunk', 'galaxy', 'atlantis', 'inferno'].forEach(t => {
-    if (!STATE.ownedThemes.includes(t)) STATE.ownedThemes.push(t);
-  });
-  // Legacy legend skins (kept for existing skin grid)
-  ['💠', '🏆', '🌌'].forEach(s => {
-    if (!STATE.ownedSkins.includes(s)) STATE.ownedSkins.push(s);
-  });
-
-  // Permanent multipliers
-  STATE.tapIncomeMultiplier = 2;
-  STATE.autoIncomeMultiplier = 2;
-
-  // Offline earnings 24h
-  STATE.offlineEarningLimitHours = 24;
-
-  // Permanent ad removal
-  STATE.permanentAdsRemoved = true;
-
-  // Bonus wheel spins
-  STATE.bonusWheelSpins = (STATE.bonusWheelSpins || 0) + 10;
-
-  // Golden button 2x more frequent
-  STATE.goldenButtonChanceMult = 2;
-
-  // Legend badge
-  STATE.badge = 'legend';
-
-  return true;
-}
-
-// =================================================================
-// SECURE UNLOCK ENTRY POINT
-// =================================================================
-// THREE MODES:
-// 1. Firebase + Backend configured: client sends orderID to backend,
-//    backend verifies with PayPal, updates Firestore, client gets
-//    update via the live snapshot listener. This is the SECURE path.
-// 2. Firebase configured but no backend: applies locally + warns.
-//    NOT SECURE — for testing UI only.
-// 3. No Firebase: applies locally to localStorage. DEMO ONLY.
-async function secureUnlockPack(packId, orderID) {
-  const isLivePayPal = window.PAYPAL_CLIENT_ID && window.PAYPAL_CLIENT_ID !== 'sb';
-
-  // ===== PRODUCTION: backend verifies with PayPal + writes Firestore =====
-  if (window.BACKEND_URL && Auth.currentUser) {
-    try {
-      const idToken = await Auth.currentUser.getIdToken();
-      const res = await fetch(window.BACKEND_URL + '/api/verify-purchase', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + idToken
-        },
-        body: JSON.stringify({ packId, orderID })
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        // Surface the most informative server message we can. This covers:
-        //   - PayPal verification failures (amount/order mismatch)
-        //   - Firestore write failures (rules / quota / connectivity)
-        const reason = err.error || ('Verification failed (HTTP ' + res.status + ')');
-        throw new Error(reason);
-      }
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Payment not verified');
-      // Apply state from server (Firestore snapshot listener will also fire)
-      Object.assign(STATE, data.userState);
-      reconcilePackEntitlements();
-      onPackUnlocked(packId);
-      saveGame();
-      return true;
-    } catch(err) {
-      console.error('[Pack] backend verification failed:', err);
-      const msg = (err && err.message) || 'Verification failed';
-      // When running with a LIVE PayPal ID we MUST refuse to fall through to
-      // local-apply — that would hand out the pack for free.
-      showPackFail('Could not unlock pack: ' + msg + '. If your card was charged, sign in again to restore the purchase.');
-      return false;
-    }
-  }
-
-  // ===== SANDBOX-ONLY local fallback =====
-  // Only allowed when running with the literal 'sb' sandbox token. Refuse for
-  // any real client ID so we never award a pack for free in production.
-  if (isLivePayPal) {
-    console.error('[Pack] Refusing to apply pack locally — live PayPal but no backend/auth.');
-    showPackFail('Cannot complete purchase: please sign in and ensure you are connected, then try again.');
-    return false;
-  }
-
-  console.warn('[DEMO MODE] No backend / sandbox token — applying pack client-side.');
-  let applied = false;
-  if (packId === 'starter')      applied = applyStarterPack();
-  else if (packId === 'legend')  applied = applyLegendPack();
-  if (applied) {
-    saveGame();
-    if (Auth.currentUser) await Auth.saveProgress();
-    onPackUnlocked(packId);
-    return true;
-  } else {
-    showPackFail('You already own this pack.');
-    return false;
-  }
-}
-
-function onPackUnlocked(packId) {
-  reconcilePackEntitlements();
-  const pack = PACKS[packId];
-  document.getElementById('packSuccessName').textContent = pack.name + ' UNLOCKED!';
-  document.getElementById('packSuccessDesc').textContent = `Pack unlocked successfully! All ${pack.features.length} rewards added to your account.`;
-  document.getElementById('modalPackSuccess').classList.add('active');
-  Audio.win();
-  // Massive confetti
-  for (let i = 0; i < 50; i++) setTimeout(() => spawnConfetti(), i * 25);
-  // Apply pack-side effects to UI
-  applyPackUIEffects();
-  renderPacks();
-  if (typeof renderSkins === 'function') renderSkins();
-  updateHUD();
-}
-
-function showPackFail(msg) {
-  document.getElementById('packFailMsg').textContent = msg || 'Payment failed. Please try again.';
-  document.getElementById('modalPackFail').classList.add('active');
-  Audio.error();
-}
-
-function applyPackUIEffects() {
-  // Update tap face if needed (don't override player's choice unnecessarily)
-  // Just refresh whatever needs refreshing
-  updateBoostIndicator();
-}
-
-function updateBoostIndicator() {
-  const ind = document.getElementById('boostIndicator');
-  const text = document.getElementById('boostText');
-  const timerEl = document.getElementById('boostTimer');
-  const now = Date.now();
-  const starterBoost = STATE.starterBoostUntil > now;
-  const adFree = STATE.permanentAdsRemoved || STATE.adsRemovedUntil > now;
-
-  if (starterBoost) {
-    const remain = Math.floor((STATE.starterBoostUntil - now) / 1000);
-    const h = Math.floor(remain / 3600);
-    const m = Math.floor((remain % 3600) / 60);
-    const s = remain % 60;
-    text.textContent = '⚡ 2× BOOST';
-    timerEl.textContent = `${h}h ${m}m`;
-    ind.classList.add('active');
-  } else if (STATE.packType === 'legend') {
-    text.textContent = '👑 LEGEND';
-    timerEl.textContent = '∞';
-    ind.classList.add('active');
-  } else {
-    ind.classList.remove('active');
-  }
-}
-
-setInterval(updateBoostIndicator, 1000);
-
-// =================================================================
-// PAYPAL CHECKOUT FLOW
-// =================================================================
-let pendingPackId = null;
-
-// =================================================================
-// PAYPAL CHECKOUT — Production flow
-// =================================================================
-let _paypalPackId = null;
-
-function openPayPalCheckout(packId) {
-  const pack = PACKS[packId];
-  if (!pack || pack.price === 0) return;
-
-  // Require sign-in so we can attribute the purchase
-  if (window.FIREBASE_READY && !Auth.currentUser) {
-    toast('Please sign in to purchase packs', 'ℹ️');
-    document.getElementById('modalPacks').classList.remove('active');
-    openAuthModal();
-    return;
-  }
-
-  // Check if PayPal is configured
- if (
-  !window.PAYPAL_CLIENT_ID ||
-  window.PAYPAL_CLIENT_ID === 'YOUR_PAYPAL_LIVE_CLIENT_ID' ||
-  !window.BACKEND_URL
-) {
-  console.log("PAYPAL_CLIENT_ID:", window.PAYPAL_CLIENT_ID);
-  console.log("BACKEND_URL:", window.BACKEND_URL);
-  showPackFail('Payment not configured. Check PayPal Client ID and Backend URL.');
-  return;
-}
-
-  _paypalPackId = packId;
-  document.getElementById('paypalTitle').textContent    = pack.name;
-  document.getElementById('paypalPrice').textContent    = pack.priceLabel;
-  document.getElementById('paypalDesc').textContent     = pack.features.slice(0, 3).join(' • ');
-  document.getElementById('paypal-button-container').innerHTML =
-    '<div style="text-align:center;padding:20px;color:#666;">Loading payment…</div>';
-  document.getElementById('paypalOverlay').classList.add('active');
-
-  loadPayPalSDK(
-    () => _renderPayPalButtons(packId, pack),
-    (err) => {
-      console.error('[PayPal] SDK load error:', err);
-      document.getElementById('paypal-button-container').innerHTML =
-        '<p style="color:#b91c1c;text-align:center;padding:20px;">⚠️ Payment system failed to load. Check your internet connection and try again.</p>';
-      // Also surface a toast so the message is visible if the overlay closes
-      toast('PayPal failed to load — try again', '⚠️');
-    }
-  );
-}
-
-function _renderPayPalButtons(packId, pack) {
-  const container = document.getElementById('paypal-button-container');
-  if (!container || !window.paypal) return;
-  container.innerHTML = '';
-
-  try {
-    window.paypal.Buttons({
-      style: { layout:'vertical', color: packId==='legend'?'gold':'blue',
-               shape:'pill', label:'pay', height:45 },
-
-      createOrder: (data, actions) => {
-        // Embed userId|packId so webhook can attribute without a second roundtrip
-        const customId = (Auth.currentUser ? Auth.currentUser.uid : 'guest') + '|' + packId;
-        return actions.order.create({
-          purchase_units: [{
-            description: pack.name + ' — Tap Tycoon',
-            amount: { value: pack.price.toFixed(2), currency_code: 'USD' },
-            custom_id: customId
-          }]
-        });
-      },
-
-      onApprove: async (data, actions) => {
-        document.getElementById('paypal-button-container').innerHTML =
-          '<div style="text-align:center;padding:20px;color:#16a34a;font-weight:700;">✓ Payment approved — unlocking…</div>';
-        try {
-          // Sandbox test mode (only when client ID literally equals 'sb')
-          if (window.PAYPAL_CLIENT_ID === 'sb') {
-            if (packId === 'starter') applyStarterPack();
-            if (packId === 'legend')  applyLegendPack();
-            saveGame();
-            onPackUnlocked(packId);
-          } else {
-            // LIVE: capture the payment, then have the backend verify with PayPal
-            // and write the entitlement to Firestore. Never trust the client.
-            const order = await actions.order.capture();
-            await secureUnlockPack(packId, data.orderID || order.id);
-          }
-          document.getElementById('paypalOverlay').classList.remove('active');
-        } catch(e) {
-          console.error('[PayPal] capture/verify error:', e);
-          // Distinguish capture-side errors vs server verify-side errors so the
-          // user sees the real reason (Firestore save failure surfaces here too).
-          const msg = (e && e.message) ? e.message : 'Payment capture failed.';
-          showPackFail(msg + ' If you were charged, contact support — your purchase will be restored on next sign-in.');
-          document.getElementById('paypalOverlay').classList.remove('active');
-        }
-      },
-
-      onError: (err) => {
-        console.error('[PayPal] onError:', err);
-        showPackFail('PayPal payment failed. Please try again or use a different payment method.');
-        document.getElementById('paypalOverlay').classList.remove('active');
-      },
-
-      onCancel: () => {
-        document.getElementById('paypalOverlay').classList.remove('active');
-        toast('Payment cancelled', 'ℹ️');
-      }
-    }).render('#paypal-button-container').catch(() => {
-      container.innerHTML =
-        '<p style="color:#b91c1c;text-align:center;padding:16px;">⚠️ Could not render PayPal. Try again.</p>';
-    });
-  } catch(e) {
-    container.innerHTML =
-      '<p style="color:#b91c1c;text-align:center;padding:16px;">⚠️ PayPal error. Try again.</p>';
-  }
-}
-
-// Stub kept so no references break
-function renderPayPalButtons() {}
-
-// PayPal cancel button
-const _ppCancelBtn = document.getElementById('paypalCancel');
-if (_ppCancelBtn) {
-  _ppCancelBtn.onclick = () => document.getElementById('paypalOverlay').classList.remove('active');
-}
-document.getElementById('btnPackSuccessClose').onclick = () => {
-  document.getElementById('modalPackSuccess').classList.remove('active');
-  renderPacks();
-};
-document.getElementById('btnPackFailClose').onclick = () => {
-  document.getElementById('modalPackFail').classList.remove('active');
-};
-
-// =================================================================
-// PACKS UI RENDERING
-// =================================================================
-function renderPacks() {
-  const c = document.getElementById('packsContent');
-  c.innerHTML = '';
-
-  // Helper to build a pack card
-  function buildCard(pack, ownedFlag, isFree) {
-    const card = document.createElement('div');
-    card.className = `pack-card ${pack.id}`;
-
-    let buttonHtml;
-    if (isFree) {
-      const currentPlan = STATE.packType === 'free' ? '✓ Your current plan' : 'Free tier (always available)';
-      buttonHtml = `<div class="pack-current-status"><strong>${currentPlan}</strong></div>`;
-    } else if (ownedFlag) {
-      buttonHtml = `<button class="pack-buy-btn owned" disabled>✓ OWNED — ALL THEMES UNLOCKED</button>`;
-    } else {
-      const label = pack.buttonLabel || `BUY ${pack.priceLabel}`;
-      buttonHtml = `<button class="pack-buy-btn ${pack.id}" data-buy="${pack.id}">
-        <span>${pack.id === 'legend' ? '👑' : '🌍'}</span>
-        <span>${label.toUpperCase()}</span>
-      </button>`;
-    }
-
-    const ribbon = pack.ribbon && !ownedFlag && !isFree
-      ? `<div class="pack-ribbon">${pack.ribbon}</div>` : '';
-
-    // Theme preview row — small thumbnails of included themes
-    let themePreview = '';
-    if (pack.themes && pack.themes.length) {
-      const thumbs = pack.themes.map(tid => {
-        const t = THEMES.find(x => x.id === tid);
-        if (!t) return '';
-        const grad = `linear-gradient(135deg, ${t.bg1}, ${t.bg2}, ${t.bg3})`;
-        return `<div title="${t.name}" style="
-          width: 48px; height: 48px; border-radius: 10px;
-          background: ${grad};
-          border: 2px solid rgba(255,255,255,0.2);
-          display: grid; place-items: center; font-size: 20px;
-          flex-shrink: 0; position: relative; z-index: 2;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);">${t.flag}</div>`;
-      }).join('');
-      themePreview = `
-        <div style="display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto;
-                    padding: 4px 0; position: relative; z-index: 2;">
-          ${thumbs}
-        </div>
-      `;
-    }
-
-    const headline = pack.headline
-      ? `<p style="font-size: 13px; color: rgba(255,255,255,0.85); margin-bottom: 10px;
-                   font-style: italic; position: relative; z-index: 2;">"${pack.headline}"</p>`
-      : '';
-
-    card.innerHTML = `
-      ${ribbon}
-      <div class="pack-header">
-        <div class="pack-icon ${pack.id}">${pack.icon}</div>
-        <div class="pack-title-area">
-          <div class="pack-title">${pack.name}</div>
-          <span class="pack-tag ${pack.id}">${pack.tagline}</span>
-        </div>
-      </div>
-      ${headline}
-      ${themePreview}
-      <ul class="pack-features">
-        ${pack.features.map(f => `<li>${f}</li>`).join('')}
-      </ul>
-      ${buttonHtml}
-    `;
-    return card;
-  }
-
-  c.appendChild(buildCard(PACKS.free, false, true));
-  c.appendChild(buildCard(PACKS.starter, STATE.starterPackPurchased, false));
-  c.appendChild(buildCard(PACKS.legend, STATE.legendPackPurchased, false));
-
-  // Footer
-  const footer = document.createElement('div');
-  footer.style.cssText = 'text-align:center; padding:12px; font-size:11px; color:rgba(255,255,255,0.5); line-height:1.5;';
-  footer.innerHTML = `
-    Purchases are tied to your account and restore on login.<br>
-    Powered by <strong style="color: var(--gold);">PayPal</strong> • Secure backend verification.<br>
-    <button id="btnRestorePurchases" style="margin-top: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: var(--paper); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 11px;">⟲ Restore Purchases</button>
-  `;
-  c.appendChild(footer);
-
-  c.querySelectorAll('[data-buy]').forEach(b => {
-    b.onclick = () => {
-      Audio.tap();
-      if (!window.BACKEND_URL) {
-  showPackFail('Backend URL not configured.');
-  return;
-}
-  openPayPalCheckout(b.dataset.buy);
-    };
-  });
-  document.getElementById('btnRestorePurchases').onclick = restorePurchases;
-}
-
-// =================================================================
-// RESTORE PURCHASES
-// In production: query backend with user's auth token. Backend
-// returns the user's purchase record from the database.
-// =================================================================
-async function restorePurchases() {
-  Audio.tap();
-  toast('Checking for purchases...', '⟲');
-  // ===== PRODUCTION: backend-verified =====
-  if (window.BACKEND_URL && Auth.currentUser) {
-    try {
-      const idToken = await Auth.currentUser.getIdToken();
-      const res = await fetch(window.BACKEND_URL + '/api/restore-purchases', {
-        headers: { 'Authorization': 'Bearer ' + idToken }
-      });
-      const data = await res.json();
-      if (data.success) {
-        Object.assign(STATE, data.userState || {});
-        reconcilePackEntitlements();
+function checkThemeUnlocks(prevLevel, newLevel) {
+  THEMES.forEach(theme => {
+    if (theme.unlockLevel > prevLevel && theme.unlockLevel <= newLevel) {
+      if (!STATE.ownedThemes.includes(theme.id)) {
+        STATE.ownedThemes.push(theme.id);
         saveGame();
-        renderPacks();
-        if (typeof renderSkins === 'function') renderSkins();
-        applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
-        updateHUD();
-        updateBoostIndicator();
-        toast('Purchases restored!', '✅');
-      } else {
-        toast('Could not restore: ' + (data.error || 'unknown error'), '❌');
+        showThemeUnlockCelebration(theme);
       }
-    } catch(err) {
-      toast('Restore failed: ' + err.message, '❌');
     }
-    return;
-  }
-  // ===== Firebase only (no backend yet) =====
-  if (Auth.currentUser) {
-    const cloud = await Auth.loadFromCloud();
-    if (cloud) {
-      PACK_FIELD_KEYS.forEach(k => {
-        if (cloud[k] !== undefined) STATE[k] = cloud[k];
-      });
-      reconcilePackEntitlements();
-      saveGame();
-      renderPacks();
-      if (typeof renderSkins === 'function') renderSkins();
-      applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
-      updateHUD();
-      updateBoostIndicator();
-    }
-    if (STATE.starterPackPurchased || STATE.legendPackPurchased) {
-      toast('Cloud purchases restored!', '✅');
-    } else {
-      toast('No cloud purchases found', 'ℹ️');
-    }
-    return;
-  }
-  // ===== Local only =====
-  setTimeout(() => {
-    if (STATE.starterPackPurchased || STATE.legendPackPurchased) {
-      toast('Local purchases found.', 'ℹ️');
-    } else {
-      toast('No purchases found. Sign in to sync across devices.', 'ℹ️');
-    }
-  }, 600);
+  });
 }
 
-// =================================================================
-// HIDE PACKS BADGE AFTER FIRST OPEN
-// =================================================================
-document.getElementById('packsTabBtn').addEventListener('click', () => {
-  document.getElementById('packsBadge').style.display = 'none';
-});
+function showThemeUnlockCelebration(theme) {
+  document.getElementById('themeUnlockFlag').textContent = theme.flag;
+  document.getElementById('themeUnlockName').textContent = theme.name;
+  document.getElementById('themeUnlockDesc').textContent = theme.desc;
+  document.getElementById('modalThemeUnlock').classList.add('active');
+  if (typeof Audio !== 'undefined' && Audio.win) Audio.win();
+  for (let i = 0; i < 30; i++) setTimeout(() => spawnConfetti(), i * 40);
+  const equipBtn = document.getElementById('btnThemeUnlockEquip');
+  const laterBtn = document.getElementById('btnThemeUnlockLater');
+  const close = () => document.getElementById('modalThemeUnlock').classList.remove('active');
+  equipBtn.onclick = () => {
+    STATE.equippedTheme = theme.id;
+    applyTheme(theme);
+    saveGame();
+    if (Auth && Auth.currentUser) Auth.saveProgress();
+    close();
+    renderWorldThemes();
+    toast('Theme equipped! ✨', theme.flag);
+  };
+  laterBtn.onclick = close;
+}
+
+function renderWorldThemes() {
+  const c = document.getElementById('packsContent');
+  if (!c) return;
+  c.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'world-themes-header';
+  header.innerHTML = '<strong>🌍 Tap & level up to unlock new worlds!</strong><br>Each theme transforms backgrounds, particles, and your tap button.';
+  c.appendChild(header);
+  THEMES.forEach(theme => {
+    const isOwned = STATE.ownedThemes.includes(theme.id);
+    const isActive = STATE.equippedTheme === theme.id;
+    const bgGradient = `linear-gradient(135deg, ${theme.bg1} 0%, ${theme.bg2} 50%, ${theme.bg3} 100%)`;
+    const card = document.createElement('div');
+    card.className = 'theme-unlock-card' + (isOwned ? ' unlocked' : ' locked') + (isActive ? ' active-theme' : '');
+    const badgeClass = isActive ? 'active-badge' : (isOwned ? 'unlocked-badge' : '');
+    const badgeText = isActive ? '✓ ACTIVE' : (isOwned ? '✓ UNLOCKED' : `🔒 Lvl ${theme.unlockLevel}`);
+    let progressHtml = '';
+    if (!isOwned) {
+      const pct = Math.min(100, Math.floor((STATE.level / theme.unlockLevel) * 100));
+      progressHtml = `<div class="theme-lock-bar">
+        <span class="theme-lock-text">🔒 Need Lvl ${theme.unlockLevel}</span>
+        <div class="theme-progress-track"><div class="theme-progress-fill" style="width:${pct}%"></div></div>
+        <span class="theme-lock-levels">${STATE.level}/${theme.unlockLevel}</span>
+      </div>`;
+    }
+    card.innerHTML = `
+      <div class="theme-card-bg-full" style="background:${bgGradient};"></div>
+      <div class="theme-card-inner">
+        <div class="theme-card-top">
+          <span class="theme-card-title">${theme.flag} ${theme.name}</span>
+          <span class="theme-level-badge ${badgeClass}">${badgeText}</span>
+        </div>
+        <div class="theme-card-desc">${theme.desc}</div>
+        ${isOwned
+          ? `<button class="theme-equip-btn ${isActive ? 'btn-active' : 'btn-equip'}" data-tid="${theme.id}">
+               ${isActive ? '✓ Currently Equipped' : '✨ Equip Theme'}
+             </button>`
+          : progressHtml
+        }
+      </div>`;
+    if (isOwned && !isActive) {
+      card.querySelector('button').onclick = () => {
+        STATE.equippedTheme = theme.id;
+        applyTheme(theme);
+        saveGame();
+        if (Auth && Auth.currentUser) Auth.saveProgress();
+        renderWorldThemes();
+        toast(`Equipped ${theme.name}!`, theme.flag);
+      };
+    }
+    c.appendChild(card);
+  });
+}
+
+function renderPacks() { renderWorldThemes(); }
 
 // =================================================================
 // ACHIEVEMENTS — check progress and trigger unlock celebrations
@@ -6053,8 +5323,7 @@ const Auth = {
     try {
       const fns = window.firebaseFns;
       const ref = fns.doc(window.firebaseDB, 'users', this.currentUser.uid, 'progress', 'gameState');
-      // Only save the non-sensitive game state — pack/badge fields are server-controlled
-      reconcilePackEntitlements();
+      // Save game state to Firestore
       const progress = {
         coins: STATE.coins,
         totalCoins: STATE.totalCoins,
@@ -6101,16 +5370,9 @@ const Auth = {
         fns.getDoc(progressRef)
       ]);
 
-      // Merge: server-controlled pack fields take precedence
-      const cloudData = getDefaultPackFields();
-      if (progressSnap.exists()) Object.assign(cloudData, sanitizeCloudProgress(progressSnap.data()));
-      if (userSnap.exists()) {
-        const u = userSnap.data();
-        // Pack/badge fields are SERVER-CONTROLLED. Always trust the server doc.
-        PACK_FIELD_KEYS.forEach(k => {
-          if (u[k] !== undefined) cloudData[k] = u[k];
-        });
-      }
+      // Load player progress
+      const cloudData = {};
+      if (progressSnap.exists()) Object.assign(cloudData, progressSnap.data());
       return cloudData;
     } catch(e) {
       console.warn('Cloud load failed:', e);
@@ -6118,42 +5380,7 @@ const Auth = {
     }
   },
 
-  // Live listener for pack updates (when backend grants packs via webhook)
-  subscribeToPackUpdates() {
-    if (!this.isReady() || !this.currentUser) return;
-    if (this.unsubscribe) this.unsubscribe();
-    const fns = window.firebaseFns;
-    const userRef = fns.doc(window.firebaseDB, 'users', this.currentUser.uid);
-    this.unsubscribe = fns.onSnapshot(userRef, (snap) => {
-      if (!snap.exists()) return;
-      const u = snap.data();
-      let changed = false;
-      // Apply server-side pack fields if changed
-      PACK_FIELD_KEYS.forEach(k => {
-        if (u[k] !== undefined && JSON.stringify(STATE[k]) !== JSON.stringify(u[k])) {
-          STATE[k] = u[k];
-          changed = true;
-        }
-      });
-      // Server may also bump coins on pack purchase — trust it
-      if (u.serverCoinsBonus && u.serverCoinsBonus > (STATE._lastBonusApplied || 0)) {
-        STATE.coins += u.serverCoinsBonus;
-        STATE.totalCoins += u.serverCoinsBonus;
-        STATE._lastBonusApplied = u.serverCoinsBonus;
-        changed = true;
-      }
-      if (changed) {
-        reconcilePackEntitlements();
-        updateHUD();
-        updateBoostIndicator();
-        applyTierVisuals(false);
-        applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
-        renderPacks();
-        if (typeof renderSkins === 'function') renderSkins();
-        saveGame();
-      }
-    });
-  },
+  subscribeToPackUpdates() { /* pack updates removed — themes are level-based */ },
 
   startAutoSync() {
     if (this.syncInterval) clearInterval(this.syncInterval);
@@ -6223,28 +5450,21 @@ async function onUserSignedIn(user) {
     const cloudTotal = cloud.totalCoins || 0;
 
     if (cloudTotal > localTotal) {
-      // Cloud is ahead → adopt cloud
+      // Cloud is ahead - adopt cloud progress
       Object.assign(STATE, cloud);
+      // Rebuild owned themes from level in case old save had pack-locked themes
+      const earned = THEMES.filter(t => t.unlockLevel <= (STATE.level || 1)).map(t => t.id);
+      STATE.ownedThemes = [...new Set([...(STATE.ownedThemes || ['default']), ...earned])];
       toast('Cloud progress restored!', '☁️');
     } else if (localTotal > cloudTotal) {
-      // Local is ahead → keep local but inherit pack fields from cloud
-      PACK_FIELD_KEYS.forEach(k => {
-        if (cloud[k] !== undefined) STATE[k] = cloud[k];
-      });
-      toast('Local progress kept; packs synced from cloud', '🔄');
+      // Local is ahead - push to cloud
+      toast('Local progress kept', '🔄');
       await Auth.saveProgress();
-    } else {
-      // Equal or cloud empty: just adopt cloud's pack fields
-      PACK_FIELD_KEYS.forEach(k => {
-        if (cloud[k] !== undefined) STATE[k] = cloud[k];
-      });
     }
   } else {
-    // First time login — push current state to cloud
+    // First time login - push current state to cloud
     await Auth.saveProgress();
   }
-
-  reconcilePackEntitlements();
 
   // Re-apply visuals after merge
   const skinObj = SKINS.find(s => s.id === STATE.equippedSkin) || SKINS[0];
@@ -6309,7 +5529,6 @@ function onUserSignedOut(resetLocalState = false) {
   localStorage.removeItem('ownedPacks');
 
   replaceState(getDefaultState());
-  reconcilePackEntitlements();
   saveGame();
   Auth._signedOutReset = true;
 
@@ -6905,7 +6124,7 @@ document.querySelectorAll('[data-close]').forEach(b => {
 // click outside to close
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => {
-    if (e.target === o && o.id !== 'modalWelcome' && o.id !== 'modalJackpot' && o.id !== 'modalOffline' && o.id !== 'modalPackSuccess' && o.id !== 'modalPackFail') {
+    if (e.target === o && o.id !== 'modalWelcome' && o.id !== 'modalJackpot' && o.id !== 'modalOffline' && o.id !== 'modalThemeUnlock') {
       o.classList.remove('active');
     }
   });
@@ -6981,20 +6200,17 @@ function loadGame() {
     const data = JSON.parse(raw);
     Object.assign(STATE, data);
     // ===== MIGRATIONS =====
-    // Clean up any obsolete theme IDs from previous versions.
+    // Remove legacy pack fields from old saves
+    ['packType','starterPackPurchased','legendPackPurchased','adsRemovedUntil',
+     'permanentAdsRemoved','badge','goldenButtonChanceMult'].forEach(k => delete STATE[k]);
+    if (!STATE.lastThemeUnlockShown) STATE.lastThemeUnlockShown = 0;
+    // Rebuild ownedThemes based on current level (handles old saves)
     const validThemeIds = THEMES.map(t => t.id);
-    if (Array.isArray(STATE.ownedThemes)) {
-      STATE.ownedThemes = STATE.ownedThemes.filter(id => validThemeIds.includes(id));
-      if (!STATE.ownedThemes.includes('default')) STATE.ownedThemes.unshift('default');
-      // Free users get all 3 free themes by default
-      ['default', 'forest', 'space_lite'].forEach(id => {
-        if (!STATE.ownedThemes.includes(id)) STATE.ownedThemes.push(id);
-      });
-    }
-    if (!validThemeIds.includes(STATE.equippedTheme)) {
-      STATE.equippedTheme = 'default';
-    }
-    reconcilePackEntitlements();
+    const earnedByLevel = THEMES.filter(t => t.unlockLevel <= (STATE.level || 1)).map(t => t.id);
+    const existing = Array.isArray(STATE.ownedThemes) ? STATE.ownedThemes.filter(id => validThemeIds.includes(id)) : [];
+    STATE.ownedThemes = [...new Set([...existing, ...earnedByLevel])];
+    if (!STATE.ownedThemes.includes('default')) STATE.ownedThemes.unshift('default');
+    if (!validThemeIds.includes(STATE.equippedTheme)) STATE.equippedTheme = 'default';
     return true;
   } catch(e) { return false; }
 }
