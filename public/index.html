@@ -4073,6 +4073,22 @@ function starStartCoins() {
 // Achievement bonus: each unlocked achievement grants +1% to all earnings
 function achievementBonus() { return 1 + (STATE.achievementsUnlocked || 0) * 0.01; }
 
+function fmt(n) {
+  if (n < 1000) return Math.floor(n).toString();
+  const units = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+  let i = 0;
+  while (n >= 1000 && i < units.length - 1) { n /= 1000; i++; }
+  return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + units[i];
+}
+
+function fmtTime(secs) {
+  if (secs < 60) return `${Math.floor(secs)}s`;
+  if (secs < 3600) return `${Math.floor(secs/60)}m ${Math.floor(secs%60)}s`;
+  return `${Math.floor(secs/3600)}h ${Math.floor((secs%3600)/60)}m`;
+}
+
+function packTapMult() { return STATE.tapIncomeMultiplier || 1; }
+function packAutoMult() { return STATE.autoIncomeMultiplier || 1; }
 function activeStarterBoost() { return Date.now() < (STATE.starterBoostUntil || 0) ? 2 : 1; }
 
 function clickValue() {
