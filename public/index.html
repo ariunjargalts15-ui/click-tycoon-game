@@ -4134,7 +4134,7 @@ function autoCost(id) {
   return Math.floor(def.baseCost * Math.pow(def.growth, STATE.auto[id]));
 }
 
-function levelXPNeeded() { return Math.floor(100 * Math.pow(1.4, STATE.level - 1)); }
+function levelXPNeeded() { return Math.floor(50 * Math.pow(1.18, STATE.level - 1)); }
 
 function prestigeReward() {
   return Math.floor(Math.sqrt(STATE.totalCoins / 1e6));
@@ -4161,7 +4161,8 @@ function addXP(amt) {
   STATE.levelXP += amt;
   let leveled = false;
   while (STATE.levelXP >= levelXPNeeded()) {
-    STATE.levelXP -= levelXPNeeded();
+    const needed = levelXPNeeded();
+    STATE.levelXP -= needed;
     STATE.level++;
     leveled = true;
     onLevelUp();
@@ -4282,8 +4283,8 @@ function performTap(e) {
   addCoins(value);
   STATE.totalTaps++;
 
-  // XP from tapping
-  addXP(1);
+  // XP from tapping — scales with level so late-game taps still feel meaningful
+  addXP(1 + Math.floor(STATE.level / 10));
 
   // Visual feedback
   const btn = document.getElementById('tapBtn');
