@@ -12,20 +12,72 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Pack / entitlement fields that ONLY the backend (Admin SDK) may write.
+    function isLockedField(field) {
+      return field in [
+        'starterPackPurchased',
+        'legendPackPurchased',
+        'packType',
+        'permanentAdsRemoved',
+        'tapIncomeMultiplier',
+        'autoIncomeMultiplier',
+        'badge',
+        'goldenButtonChanceMult',
+        'starterBoostUntil',
+        'adsRemovedUntil',
+        'offlineEarningLimitHours',
+        'bonusWheelSpins',
+        'ownedThemes',
+        'ownedSkins',
+        'serverCoinsBonus'
+      ];
+    }
+
+    function hasLockedFields(keys) {
+      return keys.hasAny([
+        'starterPackPurchased',
+        'legendPackPurchased',
+        'packType',
+        'permanentAdsRemoved',
+        'tapIncomeMultiplier',
+        'autoIncomeMultiplier',
+        'badge',
+        'goldenButtonChanceMult',
+        'starterBoostUntil',
+        'adsRemovedUntil',
+        'offlineEarningLimitHours',
+        'bonusWheelSpins',
+        'ownedThemes',
+        'ownedSkins',
+        'serverCoinsBonus'
+      ]);
+    }
+
     // ── users/{userId} ─────────────────────────────────────────
     // Clients can READ their own document (to restore purchases on login).
-    // Clients can WRITE only the "progress" subcollection (game state).
-    // All pack/badge/purchase fields are WRITE-LOCKED on the main doc —
-    // only the backend Admin SDK (bypass security rules) can write them.
+    // Clients can CREATE/UPDATE only safe profile fields (uid, email, name,
+    // photoURL, provider, lastLoginAt, createdAt). Pack/badge/purchase
+    // fields stay write-locked — only the backend Admin SDK can change them.
     match /users/{userId} {
 
-      // Allow authenticated users to read their own document
       allow read: if request.auth != null && request.auth.uid == userId;
 
-      // DENY all direct client writes to the main user document.
-      // Pack fields (starterPackPurchased, legendPackPurchased, badge, etc.)
-      // can only be written by the backend via Admin SDK.
-      allow write: if false;
+      // Create: brand-new profile document. Block any locked field from
+      // being set on creation.
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && !hasLockedFields(request.resource.data.keys());
+
+      // Update: only allow if the client is not changing any locked field.
+      // diff().affectedKeys() returns just the fields that actually changed,
+      // so unchanged pack fields on the doc are fine.
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && !hasLockedFields(
+                         request.resource.data.diff(resource.data).affectedKeys()
+                       );
+
+      allow delete: if false;
 
       // ── users/{userId}/progress/gameState ──────────────────
       // Clients CAN write their own game progress (coins, level, upgrades).
@@ -33,17 +85,7 @@ service cloud.firestore {
       match /progress/gameState {
         allow read:  if request.auth != null && request.auth.uid == userId;
         allow write: if request.auth != null && request.auth.uid == userId
-                     // Prevent the client from sneaking in pack fields
-                     && !request.resource.data.keys().hasAny([
-                          'starterPackPurchased',
-                          'legendPackPurchased',
-                          'packType',
-                          'permanentAdsRemoved',
-                          'tapIncomeMultiplier',
-                          'autoIncomeMultiplier',
-                          'badge',
-                          'goldenButtonChanceMult'
-                        ]);
+                     && !hasLockedFields(request.resource.data.keys());
       }
     }
 

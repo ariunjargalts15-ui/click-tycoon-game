@@ -11,6 +11,10 @@
 <title>TAP TYCOON — One Click Empire</title>
 <link rel="manifest" href="/manifest.json" />
 <script defer src="/_vercel/insights/script.js"></script>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7554165066835044"
+     crossorigin="anonymous"></script>
+  
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
@@ -29,39 +33,36 @@
     measurementId: "G-C5WW1X38LN"
   };
 
+  // Detect placeholder config — if so, run in offline/local mode
   window.FIREBASE_CONFIGURED = !window.FIREBASE_CONFIG.apiKey.includes('YOUR_API_KEY');
 
   if (window.FIREBASE_CONFIGURED) {
-    // Use Promise.all instead of top-level await for broader browser support (older iOS Safari etc.)
-    Promise.all([
-      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
-    ]).then(([appMod, authMod, dbMod]) => {
-      const app = appMod.initializeApp(window.FIREBASE_CONFIG);
-      window.firebaseAuth = authMod.getAuth(app);
-      window.firebaseDB   = dbMod.getFirestore(app);
-      window.firebaseFns  = {
-        doc: dbMod.doc, getDoc: dbMod.getDoc, setDoc: dbMod.setDoc,
-        onSnapshot: dbMod.onSnapshot, serverTimestamp: dbMod.serverTimestamp,
-        signIn: authMod.signInWithEmailAndPassword,
-        signUp: authMod.createUserWithEmailAndPassword,
-        signOut: authMod.signOut,
-        GoogleAuthProvider: authMod.GoogleAuthProvider,
-        signInWithPopup: authMod.signInWithPopup,
-        signInWithRedirect: authMod.signInWithRedirect,
-        getRedirectResult: authMod.getRedirectResult,
-        sendPasswordResetEmail: authMod.sendPasswordResetEmail,
-        onAuthStateChanged: authMod.onAuthStateChanged
-      };
+    try {
+      const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+              signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+              sendPasswordResetEmail } =
+              await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } =
+              await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+      const app = initializeApp(window.FIREBASE_CONFIG);
+      window.firebaseAuth = getAuth(app);
+      window.firebaseDB = getFirestore(app);
+      window.firebaseFns = { doc, getDoc, setDoc, onSnapshot, serverTimestamp,
+        signIn: signInWithEmailAndPassword,
+        signUp: createUserWithEmailAndPassword,
+        signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+        sendPasswordResetEmail, onAuthStateChanged };
       window.FIREBASE_READY = true;
+      // Notify the app when Firebase is ready
       window.dispatchEvent(new CustomEvent('firebase-ready'));
-    }).catch(e => {
+    } catch(e) {
       console.warn('Firebase failed to load:', e);
       window.FIREBASE_READY = false;
-    });
+    }
   } else {
-    console.log('[Tap Tycoon] Running in OFFLINE mode. Progress saves to localStorage only.');
+    console.log('[Tap Tycoon] Running in OFFLINE mode (Firebase not configured). Progress saves to localStorage only.');
     window.FIREBASE_READY = false;
   }
 </script>
@@ -70,12 +71,12 @@
   // ============================================================
   // CONFIGURATION — fill in before deploying
   // ============================================================
-  // 1. PAYPAL_CLIENT_ID
-  //    Get from: https://developer.paypal.com → Apps & Credentials
-  //    → switch to "Live" tab → Create App → copy Client ID
-  //    Your PayPal account email: ariunjargal.ts15@gmail.com
-  //    Make sure your account is upgraded to Business at paypal.com/business
- window.PAYPAL_CLIENT_ID = 'sb';
+  // 1. PAYPAL_CLIENT_ID — LIVE
+  //    Source: https://developer.paypal.com → My Apps & Credentials → Live tab
+  //    PayPal account email: ariunjargal.ts15@gmail.com
+  //    Business account upgrade: paypal.com/business
+  window.PAYPAL_CLIENT_ID = 'AWqxEZOVq0wAzIp-kASJFFNPqz4Hb8B555-dl3Euht9hbt5qw-5uNvuvG0fs4brGnoRYX7gN2fFyFpA7';
+
   // 2. BACKEND_URL
   //    Deploy server/index.js somewhere (Render/Railway/Fly.io all have free tiers)
   //    Then paste that URL here, e.g. 'https://tap-tycoon-api.onrender.com'
@@ -2793,107 +2794,321 @@
     transform: translateY(8px) scale(0.9);
   }
 
-  /* Fire Orb (Dragon) */
-  .tap-btn.btn-fire_orb {
-    background:
-      radial-gradient(circle at 30% 30%, #fef3c7 0%, transparent 25%),
-      radial-gradient(circle at 50% 50%, #fb923c 10%, #dc2626 50%, #450a0a 100%);
-    box-shadow: 0 12px 0 #1f0707, 0 16px 30px rgba(0,0,0,0.6),
-      inset 0 -8px 12px rgba(0,0,0,0.4), inset 0 4px 8px rgba(254,243,199,0.4),
-      0 0 50px #f97316, 0 0 100px #b91c1c;
-    animation: dragon-flame 0.6s ease-in-out infinite alternate;
+  /* ====================================================================== */
+  /* LEGEND PACK BUTTONS — supercharged glow, multi-ring borders, insignia    */
+  /* ====================================================================== */
+
+  /* Shared insignia helper used by all legend buttons */
+  @keyframes legend-insignia-bob {
+    0%, 100% { transform: translateX(-50%) translateY(0) rotate(-3deg); }
+    50%      { transform: translateX(-50%) translateY(-4px) rotate(3deg); }
   }
-  @keyframes dragon-flame {
-    from { filter: brightness(1) hue-rotate(0deg); }
-    to { filter: brightness(1.15) hue-rotate(-8deg); }
-  }
-  .tap-btn.btn-fire_orb::before {
-    border: 3px dashed #fde047;
-    box-shadow: 0 0 8px #f97316;
+  @keyframes legend-pulse-scale {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.025); }
   }
 
-  /* Hologram (Cyberpunk) */
+  /* ── Fire Orb (Dragon) ─────────────────────────────────────────── */
+  .tap-btn.btn-fire_orb {
+    background:
+      radial-gradient(circle at 30% 25%, #fffbe8 0%, transparent 22%),
+      radial-gradient(circle at 70% 75%, rgba(254,176,80,0.5) 0%, transparent 35%),
+      radial-gradient(circle at 50% 50%, #ffb547 8%, #ef4444 35%, #7f1d1d 75%, #1c0606 100%);
+    box-shadow:
+      0 0 0 5px #fde047,
+      0 0 0 7px #7f1d1d,
+      0 0 0 11px #f97316,
+      0 0 0 13px #fde047,
+      0 12px 0 #1f0707,
+      0 16px 30px rgba(0,0,0,0.6),
+      inset 0 -10px 16px rgba(0,0,0,0.45),
+      inset 0 4px 10px rgba(254,243,199,0.5),
+      0 0 60px #fb923c,
+      0 0 120px rgba(220,38,38,0.65),
+      0 0 180px rgba(239,68,68,0.35);
+    animation: dragon-flame 1.4s ease-in-out infinite, legend-pulse-scale 2.2s ease-in-out infinite;
+  }
+  @keyframes dragon-flame {
+    0%, 100% {
+      filter: brightness(1) hue-rotate(0deg);
+      box-shadow:
+        0 0 0 5px #fde047, 0 0 0 7px #7f1d1d, 0 0 0 11px #f97316, 0 0 0 13px #fde047,
+        0 12px 0 #1f0707, 0 16px 30px rgba(0,0,0,0.6),
+        inset 0 -10px 16px rgba(0,0,0,0.45), inset 0 4px 10px rgba(254,243,199,0.5),
+        0 0 50px #fb923c, 0 0 100px rgba(220,38,38,0.55);
+    }
+    50% {
+      filter: brightness(1.18) hue-rotate(-10deg);
+      box-shadow:
+        0 0 0 5px #fff7ad, 0 0 0 7px #7f1d1d, 0 0 0 11px #ffae3c, 0 0 0 13px #fff7ad,
+        0 12px 0 #1f0707, 0 16px 30px rgba(0,0,0,0.6),
+        inset 0 -10px 16px rgba(0,0,0,0.45), inset 0 4px 10px rgba(255,255,200,0.6),
+        0 0 90px #fb923c, 0 0 170px rgba(220,38,38,0.85), 0 0 240px rgba(239,68,68,0.45);
+    }
+  }
+  .tap-btn.btn-fire_orb::before {
+    content: '🐲';
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: none;
+    inset: auto;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    font-size: 26px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6))
+            drop-shadow(0 0 12px rgba(251,146,60,0.95));
+    animation: legend-insignia-bob 1.6s ease-in-out infinite;
+    z-index: 2;
+  }
+  .tap-btn.btn-fire_orb .face {
+    transform: translateY(8px);
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.55)) drop-shadow(0 0 10px rgba(251,146,60,0.55));
+  }
+  .tap-btn.btn-fire_orb.pressed .face {
+    transform: translateY(8px) scale(0.9);
+  }
+
+  /* ── Hologram (Cyberpunk) ──────────────────────────────────────── */
   .tap-btn.btn-hologram {
     background:
-      linear-gradient(135deg, transparent 30%, rgba(0,229,255,0.2) 50%, transparent 70%),
-      radial-gradient(circle at 50% 50%, #00e5ff 10%, #7c1df0 50%, #0a0a2e 100%);
-    box-shadow: 0 12px 0 #1e1b4b, 0 16px 30px rgba(0,0,0,0.6),
-      inset 0 -8px 12px rgba(0,0,0,0.3), inset 0 4px 8px rgba(167,243,255,0.4),
-      0 0 50px #00e5ff, 0 0 100px #7c1df0;
-    animation: cyber-glitch 4s linear infinite;
+      linear-gradient(135deg, transparent 28%, rgba(0,229,255,0.28) 50%, transparent 72%),
+      radial-gradient(circle at 30% 25%, rgba(165,243,255,0.5) 0%, transparent 25%),
+      radial-gradient(circle at 50% 50%, #00f0ff 8%, #b83df0 45%, #1a0a5e 80%, #050018 100%);
+    box-shadow:
+      0 0 0 4px #00e5ff,
+      0 0 0 7px #0a0a2e,
+      0 0 0 10px #ec4899,
+      0 0 0 13px #0a0a2e,
+      0 0 0 15px #00e5ff,
+      0 12px 0 #1e1b4b,
+      0 16px 30px rgba(0,0,0,0.65),
+      inset 0 -10px 16px rgba(0,0,0,0.35),
+      inset 0 4px 10px rgba(167,243,255,0.5),
+      0 0 60px #00e5ff,
+      0 0 120px rgba(184,61,240,0.7),
+      0 0 200px rgba(236,72,153,0.35);
+    animation: cyber-glitch 3.5s linear infinite, legend-pulse-scale 2.2s ease-in-out infinite;
   }
   @keyframes cyber-glitch {
-    0%, 92%, 100% { filter: hue-rotate(0deg); transform: translate(0,0); }
-    93% { filter: hue-rotate(40deg); transform: translate(2px,0); }
-    94% { filter: hue-rotate(-40deg); transform: translate(-2px,0); }
+    0%, 88%, 100% { filter: hue-rotate(0deg); transform: translate(0,0); }
+    91% { filter: hue-rotate(40deg); transform: translate(2px,0); }
+    92% { filter: hue-rotate(-40deg); transform: translate(-2px,0); }
+    93% { filter: hue-rotate(60deg); transform: translate(1px,-1px); }
     95% { filter: hue-rotate(0deg); transform: translate(0,0); }
   }
   .tap-btn.btn-hologram::before {
-    border: 2px solid #00e5ff;
-    box-shadow: 0 0 16px #00e5ff;
+    content: '⚡';
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: none;
+    inset: auto;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    font-size: 28px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.7))
+            drop-shadow(0 0 14px rgba(0,229,255,1));
+    animation: legend-insignia-bob 1.6s ease-in-out infinite;
+    z-index: 2;
+  }
+  .tap-btn.btn-hologram .face {
+    transform: translateY(8px);
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)) drop-shadow(0 0 10px rgba(0,229,255,0.65));
+  }
+  .tap-btn.btn-hologram.pressed .face {
+    transform: translateY(8px) scale(0.9);
   }
 
-  /* Plasma Orb (Galaxy) */
+  /* ── Plasma Orb (Galaxy) ───────────────────────────────────────── */
   .tap-btn.btn-plasma_orb {
     background:
-      radial-gradient(circle at 25% 25%, #fff 0%, transparent 15%),
-      radial-gradient(circle at 70% 70%, rgba(168,85,247,0.6) 0%, transparent 40%),
-      radial-gradient(circle at 50% 50%, #6366f1 20%, #1e1b4b 80%);
-    box-shadow: 0 12px 0 #0c0a2e, 0 16px 30px rgba(0,0,0,0.6),
-      inset 0 -8px 12px rgba(0,0,0,0.3), inset 0 4px 8px rgba(199,210,254,0.4),
-      0 0 60px #a855f7, 0 0 120px #4f46e5;
-    animation: plasma-swirl 6s linear infinite;
+      radial-gradient(circle at 25% 25%, #fff 0%, transparent 18%),
+      radial-gradient(circle at 70% 70%, rgba(236,72,153,0.55) 0%, transparent 40%),
+      radial-gradient(circle at 30% 80%, rgba(168,85,247,0.5) 0%, transparent 35%),
+      radial-gradient(circle at 50% 50%, #818cf8 18%, #6366f1 50%, #1e1b4b 90%);
+    box-shadow:
+      0 0 0 5px #c084fc,
+      0 0 0 7px #1e1b4b,
+      0 0 0 10px #ec4899,
+      0 0 0 13px #1e1b4b,
+      0 0 0 15px #818cf8,
+      0 12px 0 #0c0a2e,
+      0 16px 30px rgba(0,0,0,0.65),
+      inset 0 -10px 16px rgba(0,0,0,0.3),
+      inset 0 4px 10px rgba(199,210,254,0.5),
+      0 0 70px #a855f7,
+      0 0 140px rgba(99,102,241,0.65),
+      0 0 220px rgba(236,72,153,0.4);
+    animation: plasma-swirl 5s linear infinite, legend-pulse-scale 2.4s ease-in-out infinite;
   }
   @keyframes plasma-swirl {
-    0%, 100% { filter: hue-rotate(0deg); }
-    100% { filter: hue-rotate(360deg); }
+    0%   { filter: hue-rotate(0deg)   brightness(1); }
+    50%  { filter: hue-rotate(180deg) brightness(1.15); }
+    100% { filter: hue-rotate(360deg) brightness(1); }
   }
   .tap-btn.btn-plasma_orb::before {
-    border: 3px solid transparent;
-    background: linear-gradient(45deg, #a855f7, #6366f1, #ec4899) border-box;
-    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
+    content: '🌟';
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: none;
+    inset: auto;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    font-size: 28px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.7))
+            drop-shadow(0 0 14px rgba(192,132,252,1));
+    animation: legend-insignia-bob 1.8s ease-in-out infinite;
+    z-index: 2;
+  }
+  .tap-btn.btn-plasma_orb .face {
+    transform: translateY(8px);
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.55)) drop-shadow(0 0 10px rgba(192,132,252,0.6));
+  }
+  .tap-btn.btn-plasma_orb.pressed .face {
+    transform: translateY(8px) scale(0.9);
   }
 
-  /* Crystal Aqua (Atlantis) */
+  /* ── Crystal Aqua (Atlantis) ───────────────────────────────────── */
   .tap-btn.btn-crystal_aqua {
     background:
-      radial-gradient(circle at 30% 30%, #fff 0%, transparent 25%),
-      radial-gradient(circle at 60% 80%, rgba(165,243,252,0.6) 0%, transparent 40%),
-      radial-gradient(circle at 50% 50%, #67e8f9 20%, #0e7490 60%, #083344 100%);
-    box-shadow: 0 12px 0 #042f3a, 0 16px 30px rgba(0,0,0,0.5),
-      inset 0 -8px 12px rgba(0,0,0,0.3), inset 0 4px 8px rgba(255,255,255,0.6),
-      0 0 50px #06b6d4, 0 0 100px rgba(103,232,249,0.5);
-    animation: aqua-ripple 3s ease-in-out infinite;
+      radial-gradient(circle at 30% 25%, #fff 0%, transparent 22%),
+      radial-gradient(circle at 65% 80%, rgba(165,243,252,0.65) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, #a5f3fc 8%, #22d3ee 35%, #0e7490 70%, #052430 100%);
+    box-shadow:
+      0 0 0 5px #67e8f9,
+      0 0 0 7px #052430,
+      0 0 0 10px #a5f3fc,
+      0 0 0 13px #052430,
+      0 0 0 15px #22d3ee,
+      0 12px 0 #042f3a,
+      0 16px 30px rgba(0,0,0,0.55),
+      inset 0 -10px 16px rgba(0,0,0,0.3),
+      inset 0 4px 10px rgba(255,255,255,0.65),
+      0 0 60px #06b6d4,
+      0 0 130px rgba(103,232,249,0.7),
+      0 0 200px rgba(165,243,252,0.4);
+    animation: aqua-ripple 2.4s ease-in-out infinite;
   }
   @keyframes aqua-ripple {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.02); filter: brightness(1.1); }
+    0%, 100% {
+      transform: scale(1);
+      box-shadow:
+        0 0 0 5px #67e8f9, 0 0 0 7px #052430, 0 0 0 10px #a5f3fc, 0 0 0 13px #052430, 0 0 0 15px #22d3ee,
+        0 12px 0 #042f3a, 0 16px 30px rgba(0,0,0,0.55),
+        inset 0 -10px 16px rgba(0,0,0,0.3), inset 0 4px 10px rgba(255,255,255,0.65),
+        0 0 50px #06b6d4, 0 0 110px rgba(103,232,249,0.55);
+    }
+    50% {
+      transform: scale(1.02);
+      filter: brightness(1.15);
+      box-shadow:
+        0 0 0 5px #cffafe, 0 0 0 7px #052430, 0 0 0 10px #67e8f9, 0 0 0 13px #052430, 0 0 0 15px #67e8f9,
+        0 12px 0 #042f3a, 0 16px 30px rgba(0,0,0,0.55),
+        inset 0 -10px 16px rgba(0,0,0,0.3), inset 0 4px 10px rgba(255,255,255,0.8),
+        0 0 90px #22d3ee, 0 0 180px rgba(103,232,249,0.85), 0 0 250px rgba(165,243,252,0.5);
+    }
   }
   .tap-btn.btn-crystal_aqua::before {
-    border: 4px solid rgba(165,243,252,0.5);
-    box-shadow: 0 0 12px rgba(103,232,249,0.6);
+    content: '🔱';
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: none;
+    inset: auto;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    font-size: 28px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5))
+            drop-shadow(0 0 12px rgba(103,232,249,1));
+    animation: legend-insignia-bob 1.8s ease-in-out infinite;
+    z-index: 2;
+  }
+  .tap-btn.btn-crystal_aqua .face {
+    transform: translateY(8px);
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)) drop-shadow(0 0 10px rgba(165,243,252,0.65));
+  }
+  .tap-btn.btn-crystal_aqua.pressed .face {
+    transform: translateY(8px) scale(0.9);
   }
 
-  /* Magma (Inferno) */
+  /* ── Magma (Inferno) ───────────────────────────────────────────── */
   .tap-btn.btn-magma {
     background:
-      radial-gradient(circle at 35% 25%, #fef3c7 0%, transparent 20%),
-      radial-gradient(circle at 70% 60%, rgba(251,146,60,0.6) 0%, transparent 35%),
-      radial-gradient(circle at 50% 50%, #dc2626 10%, #7f1d1d 50%, #1c0303 100%);
-    box-shadow: 0 12px 0 #0c0101, 0 16px 30px rgba(0,0,0,0.7),
-      inset 0 -8px 12px rgba(0,0,0,0.5), inset 0 4px 8px rgba(254,215,170,0.3),
-      0 0 60px #b91c1c, 0 0 130px rgba(239,68,68,0.5);
-    animation: magma-bubble 1.5s ease-in-out infinite;
+      radial-gradient(circle at 35% 22%, #fff7d6 0%, transparent 20%),
+      radial-gradient(circle at 70% 60%, rgba(251,146,60,0.7) 0%, transparent 38%),
+      radial-gradient(circle at 25% 75%, rgba(239,68,68,0.55) 0%, transparent 30%),
+      radial-gradient(circle at 50% 50%, #ef4444 10%, #991b1b 45%, #3a0a05 80%, #0a0000 100%);
+    box-shadow:
+      0 0 0 5px #f97316,
+      0 0 0 7px #1c0303,
+      0 0 0 10px #fde047,
+      0 0 0 13px #1c0303,
+      0 0 0 15px #f97316,
+      0 12px 0 #0c0101,
+      0 16px 30px rgba(0,0,0,0.75),
+      inset 0 -10px 16px rgba(0,0,0,0.55),
+      inset 0 4px 10px rgba(254,215,170,0.45),
+      0 0 70px #b91c1c,
+      0 0 150px rgba(239,68,68,0.7),
+      0 0 220px rgba(251,146,60,0.4);
+    animation: magma-bubble 1.4s ease-in-out infinite;
   }
   @keyframes magma-bubble {
-    0%, 100% { background-position: 0% 0%, 0% 0%, 50% 50%; }
-    50% { background-position: 0% 0%, 30% 30%, 50% 50%; filter: brightness(1.15); }
+    0%, 100% {
+      filter: brightness(1);
+      box-shadow:
+        0 0 0 5px #f97316, 0 0 0 7px #1c0303, 0 0 0 10px #fde047, 0 0 0 13px #1c0303, 0 0 0 15px #f97316,
+        0 12px 0 #0c0101, 0 16px 30px rgba(0,0,0,0.75),
+        inset 0 -10px 16px rgba(0,0,0,0.55), inset 0 4px 10px rgba(254,215,170,0.45),
+        0 0 60px #b91c1c, 0 0 130px rgba(239,68,68,0.6);
+    }
+    50% {
+      filter: brightness(1.2);
+      box-shadow:
+        0 0 0 5px #fb923c, 0 0 0 7px #1c0303, 0 0 0 10px #fef9c3, 0 0 0 13px #1c0303, 0 0 0 15px #fb923c,
+        0 12px 0 #0c0101, 0 16px 30px rgba(0,0,0,0.75),
+        inset 0 -10px 16px rgba(0,0,0,0.55), inset 0 4px 10px rgba(255,237,180,0.6),
+        0 0 100px #f97316, 0 0 200px rgba(239,68,68,0.85), 0 0 270px rgba(251,146,60,0.5);
+    }
   }
   .tap-btn.btn-magma::before {
-    border: 3px solid #f97316;
-    box-shadow: 0 0 14px #b91c1c;
+    content: '👹';
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: none;
+    inset: auto;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    font-size: 26px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.7))
+            drop-shadow(0 0 14px rgba(249,115,22,1));
+    animation: legend-insignia-bob 1.4s ease-in-out infinite;
+    z-index: 2;
+  }
+  .tap-btn.btn-magma .face {
+    transform: translateY(8px);
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 10px rgba(249,115,22,0.6));
+  }
+  .tap-btn.btn-magma.pressed .face {
+    transform: translateY(8px) scale(0.9);
   }
 
   /* === Theme Collection Layout === */
@@ -3393,7 +3608,7 @@
 <div class="paypal-overlay" id="paypalOverlay">
   <div class="paypal-box">
     <h3 id="paypalTitle">Pack</h3>
-    <div class="price" id="paypalPrice">$1.99</div>
+    <div class="price" id="paypalPrice">$0.99</div>
     <div class="desc" id="paypalDesc"></div>
     <div id="paypal-button-container"></div>
     <button class="paypal-cancel" id="paypalCancel">Cancel</button>
@@ -3646,6 +3861,21 @@ const STATE = {
   email: null
 };
 
+const SAVE_KEY = 'tapTycoon';
+const DEFAULT_STATE = JSON.parse(JSON.stringify(STATE));
+
+function getDefaultState() {
+  const state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  state.lastSeen = Date.now();
+  state.goldenButtonNext = Date.now() + 30000 + Math.random() * 60000;
+  return state;
+}
+
+function replaceState(nextState) {
+  Object.keys(STATE).forEach(key => delete STATE[key]);
+  Object.assign(STATE, nextState);
+}
+
 // ---------- DEFINITIONS ----------
 const UPGRADES = [
   { id: 'clickPower', name: 'Bigger Tap', icon: '👊', desc: '+1 coin per tap', baseCost: 15, growth: 1.15, effect: lvl => `+${lvl} per tap` },
@@ -3782,8 +4012,8 @@ const SKINS = [
 // ============================================================
 // WORLD THEMES — organized by unlock tier
 // FREE: Classic, Forest, Space Lite
-// STARTER ($1.99): Dubai, Tokyo, New York, Paris (city themes)
-// LEGEND ($2.99): Dragon, Cyberpunk, Galaxy, Atlantis, Inferno (fantasy)
+// STARTER ($0.99): Dubai, Tokyo, New York, Paris (city themes)
+// LEGEND ($3.99): Dragon, Cyberpunk, Galaxy, Atlantis, Inferno (fantasy)
 // Each theme defines: bg colors, particle type, button style.
 // ============================================================
 const THEMES = [
@@ -3801,50 +4031,132 @@ const THEMES = [
     particle: 'stars', buttonStyle: 'classic',
     desc: 'Stargazer\'s window' },
 
-  // ===== STARTER PACK — CITY THEMES =====
+  // ===== STARTER PACK — CITY THEMES (slightly punchier bg gradients) =====
   { id: 'dubai', tier: 'starter', name: 'Dubai Luxury', flag: '🇦🇪',
-    bg1: '#1a0a00', bg2: '#5e2e0a', bg3: '#e8a832',
+    bg1: '#1f0c00', bg2: '#6e360c', bg3: '#ffbf3a',
     particle: 'dubai_gold', buttonStyle: 'dubai_crown',
     backdrop: 'dubai',
     desc: 'Burj skyline & sunset gold' },
   { id: 'tokyo', tier: 'starter', name: 'Tokyo Neon', flag: '🇯🇵',
-    bg1: '#0a0014', bg2: '#2a0540', bg3: '#9c1f8c',
+    bg1: '#0d0019', bg2: '#360a52', bg3: '#c026a8',
     particle: 'sakura', buttonStyle: 'tokyo_neon',
     backdrop: 'tokyo',
     desc: 'Tokyo Tower & neon nightscape' },
   { id: 'newyork', tier: 'starter', name: 'New York Money', flag: '🇺🇸',
-    bg1: '#050308', bg2: '#0a0612', bg3: '#1a1208',
+    bg1: '#06040a', bg2: '#100a18', bg3: '#2a1d0c',
     particle: 'dollars', buttonStyle: 'nyc_gold',
     backdrop: 'newyork',
     desc: 'Black & gold luxury skyline' },
   { id: 'paris', tier: 'starter', name: 'Paris Royal', flag: '🇫🇷',
-    bg1: '#1a0030', bg2: '#2a0a4a', bg3: '#3a1a5e',
+    bg1: '#1f003a', bg2: '#360c5e', bg3: '#5a2a8e',
     particle: 'crowns', buttonStyle: 'paris_royal',
     backdrop: 'paris',
     desc: 'Eiffel Tower & royal night' },
 
-  // ===== LEGEND PACK — FANTASY THEMES =====
+  // ===== LEGEND PACK — FANTASY THEMES (vivid pulsing backgrounds) =====
   { id: 'dragon', tier: 'legend', name: 'Dragon Empire', flag: '🐉',
-    bg1: '#1a0000', bg2: '#5e0a0a', bg3: '#c9241a',
+    bg1: '#240000', bg2: '#7a0a0a', bg3: '#ff3a1a',
     particle: 'embers', buttonStyle: 'fire_orb',
     desc: 'Red fire sky & dragon flames' },
   { id: 'cyberpunk', tier: 'legend', name: 'Cyberpunk Future', flag: '🤖',
-    bg1: '#0a0a2e', bg2: '#1a0a5e', bg3: '#7c1df0',
+    bg1: '#0a0a3a', bg2: '#280a7a', bg3: '#b83df0',
     particle: 'circuits', buttonStyle: 'hologram',
     desc: 'Neon city & holograms' },
   { id: 'galaxy', tier: 'legend', name: 'Space Galaxy', flag: '🚀',
-    bg1: '#000010', bg2: '#0a0a3a', bg3: '#3a1a8c',
+    bg1: '#000018', bg2: '#0e0a52', bg3: '#5a2ad6',
     particle: 'galaxy', buttonStyle: 'plasma_orb',
     desc: 'Stars & nebulae' },
   { id: 'atlantis', tier: 'legend', name: 'Atlantis', flag: '🌊',
-    bg1: '#001a2e', bg2: '#0a3a5e', bg3: '#1c8cb8',
+    bg1: '#00253c', bg2: '#0e527a', bg3: '#22b8e6',
     particle: 'bubbles', buttonStyle: 'crystal_aqua',
     desc: 'Underwater glow & crystals' },
   { id: 'inferno', tier: 'legend', name: 'Demon Inferno', flag: '🔥',
-    bg1: '#0a0000', bg2: '#3a0a05', bg3: '#c94a0a',
+    bg1: '#100000', bg2: '#4a0c06', bg3: '#ff6a1a',
     particle: 'sparks', buttonStyle: 'magma',
     desc: 'Lava world & magma button' }
 ];
+
+const PACK_FIELD_KEYS = [
+  'packType',
+  'starterPackPurchased',
+  'legendPackPurchased',
+  'starterBoostUntil',
+  'adsRemovedUntil',
+  'permanentAdsRemoved',
+  'tapIncomeMultiplier',
+  'autoIncomeMultiplier',
+  'offlineEarningLimitHours',
+  'bonusWheelSpins',
+  'badge',
+  'goldenButtonChanceMult'
+];
+
+const FREE_THEME_IDS = THEMES.filter(t => t.tier === 'free').map(t => t.id);
+const STARTER_THEME_IDS = THEMES.filter(t => t.tier === 'starter').map(t => t.id);
+const LEGEND_THEME_IDS = THEMES.filter(t => t.tier === 'legend').map(t => t.id);
+const STARTER_SKIN_IDS = SKINS.filter(s => s.exclusive === 'starter').map(s => s.id);
+const LEGEND_SKIN_IDS = SKINS.filter(s => s.exclusive === 'legend').map(s => s.id);
+
+function getDefaultPackFields() {
+  const defaults = getDefaultState();
+  return PACK_FIELD_KEYS.reduce((out, key) => {
+    out[key] = defaults[key];
+    return out;
+  }, {});
+}
+
+function sanitizeCloudProgress(data) {
+  const progress = { ...(data || {}) };
+  PACK_FIELD_KEYS.forEach(key => delete progress[key]);
+  delete progress.ownedThemes;
+  return progress;
+}
+
+function addUnique(list, value) {
+  if (!list.includes(value)) list.push(value);
+}
+
+function reconcilePackEntitlements() {
+  const defaults = getDefaultPackFields();
+
+  if (STATE.legendPackPurchased) {
+    // Legend includes Starter — make sure both ownership flags are set
+    // so achievements / pack-checks that look at the starter flag work too.
+    STATE.starterPackPurchased = true;
+    STATE.packType = 'legend';
+  } else if (STATE.starterPackPurchased) {
+    STATE.packType = 'starter';
+    STATE.legendPackPurchased = false;
+    STATE.permanentAdsRemoved = defaults.permanentAdsRemoved;
+    STATE.tapIncomeMultiplier = defaults.tapIncomeMultiplier;
+    STATE.autoIncomeMultiplier = defaults.autoIncomeMultiplier;
+    STATE.goldenButtonChanceMult = defaults.goldenButtonChanceMult;
+    if (STATE.badge === 'legend') STATE.badge = 'starter';
+  } else {
+    Object.assign(STATE, defaults);
+  }
+
+  const allowedThemes = [...FREE_THEME_IDS];
+  if (STATE.starterPackPurchased || STATE.legendPackPurchased) allowedThemes.push(...STARTER_THEME_IDS);
+  if (STATE.legendPackPurchased) allowedThemes.push(...LEGEND_THEME_IDS);
+  STATE.ownedThemes = allowedThemes.filter((id, index) => allowedThemes.indexOf(id) === index);
+  if (!STATE.ownedThemes.includes(STATE.equippedTheme)) STATE.equippedTheme = FREE_THEME_IDS[0] || 'default';
+
+  const skinById = new Map(SKINS.map(s => [s.id, s]));
+  const keptSkins = [];
+  (Array.isArray(STATE.ownedSkins) ? STATE.ownedSkins : []).forEach(id => {
+    const skin = skinById.get(id);
+    if (!skin) return;
+    if (!skin.exclusive) addUnique(keptSkins, id);
+    if (skin.exclusive === 'starter' && (STATE.starterPackPurchased || STATE.legendPackPurchased)) addUnique(keptSkins, id);
+    if (skin.exclusive === 'legend' && STATE.legendPackPurchased) addUnique(keptSkins, id);
+  });
+  if (SKINS[0]) addUnique(keptSkins, SKINS[0].id);
+  if (STATE.starterPackPurchased || STATE.legendPackPurchased) STARTER_SKIN_IDS.forEach(id => addUnique(keptSkins, id));
+  if (STATE.legendPackPurchased) LEGEND_SKIN_IDS.forEach(id => addUnique(keptSkins, id));
+  STATE.ownedSkins = keptSkins;
+  if (!STATE.ownedSkins.includes(STATE.equippedSkin)) STATE.equippedSkin = SKINS[0] ? SKINS[0].id : null;
+}
 
 const WHEEL_PRIZES = [
   { label: '+10', amount: 0.1, color: '#ef4444', text: 'white' },
@@ -3881,6 +4193,15 @@ function activeStarterBoost() {
 function packTapMult() { return STATE.tapIncomeMultiplier || 1; }
 function packAutoMult() { return STATE.autoIncomeMultiplier || 1; }
 
+// Permanent +2% to all earnings per player level. Compounds with everything
+// else (prestige, packs, star shop, achievements). Driven entirely by
+// STATE.level so it persists in saveProgress without any new field.
+//   Level   1 → ×1.02
+//   Level  25 → ×1.50
+//   Level  50 → ×2.00
+//   Level 100 → ×3.00
+function levelMult() { return 1 + (STATE.level - 1) * 0.02; }
+
 // Star Shop helpers
 function starLevel(id) { return (STATE.starShop && STATE.starShop[id]) || 0; }
 function starTapBonus() { return 1 + starLevel('tapBoost') * 0.25; }
@@ -3907,7 +4228,8 @@ function clickValue() {
              * packTapMult()
              * activeStarterBoost()
              * starTapBonus()
-             * achievementBonus();
+             * achievementBonus()
+             * levelMult();
   return Math.max(1, Math.floor(base * mult));
 }
 
@@ -3919,7 +4241,8 @@ function autoCPS() {
              * packAutoMult()
              * activeStarterBoost()
              * starAutoBonus()
-             * achievementBonus();
+             * achievementBonus()
+             * levelMult();
   return cps * mult;
 }
 
@@ -3978,17 +4301,80 @@ function addXP(amt) {
   return leveled;
 }
 
+// =================================================================
+// LEVEL UP — main progression carrot
+// Themes are NEVER unlocked here (those are pack-only).
+// Each level grants:
+//   • Quadratic coin bonus (level² × 100)
+//   • +2% permanent tap & auto income (via levelMult() in earnings formulas)
+//   • 25% chance of a "Lucky Bag" with a bigger coin payout
+// Milestones add session-local boosts/spins on top:
+//   • Every  5 levels → +30 min ×2 income boost
+//   • Every 10 levels → +1 bonus wheel spin
+//   • Every 25 levels → +1 hour boost AND +2 wheel spins (mega celebration)
+// =================================================================
 function onLevelUp() {
   Audio.levelup();
-  toast(`🎉 LEVEL UP! Now Level ${STATE.level}`, '🆙');
-  // Reward
-  const bonus = STATE.level * 100;
-  addCoins(bonus);
-  toast(`+${fmt(bonus)} bonus coins!`, '💰');
-  // Big celebration animation
-  for (let i = 0; i < 20; i++) {
-    setTimeout(() => spawnConfetti(), i * 30);
+  const lvl = STATE.level;
+
+  // 1. Base coin reward — quadratic so it stays meaningful late game.
+  const baseBonus = lvl * lvl * 100;
+  let totalBonus = baseBonus;
+  const rewards = [];
+  rewards.push({ icon: '💰', text: `+${fmt(baseBonus)} bonus coins` });
+
+  // 2. Permanent income multiplier — applied automatically via levelMult()
+  rewards.push({ icon: '⚡', text: `+2% permanent tap & auto income (now ×${levelMult().toFixed(2)})` });
+
+  // 3. Lucky Bag — 25% chance for a much bigger coin payout
+  if (Math.random() < 0.25) {
+    const lucky = lvl * lvl * 200;
+    totalBonus += lucky;
+    rewards.push({ icon: '🍀', text: `LUCKY BAG! +${fmt(lucky)} extra coins` });
   }
+
+  // 4. Milestone — every 5 levels: +30 min ×2 income boost
+  let confettiCount = 20;
+  if (lvl % 5 === 0) {
+    STATE.starterBoostUntil = Math.max(STATE.starterBoostUntil || 0, Date.now() + 30 * 60 * 1000);
+    rewards.push({ icon: '🚀', text: '+30 min ×2 income boost' });
+    confettiCount = 35;
+  }
+
+  // 5. Milestone — every 10 levels: +1 bonus wheel spin
+  if (lvl % 10 === 0) {
+    STATE.bonusWheelSpins = (STATE.bonusWheelSpins || 0) + 1;
+    rewards.push({ icon: '🎡', text: '+1 bonus wheel spin' });
+    confettiCount = Math.max(confettiCount, 50);
+  }
+
+  // 6. MEGA milestone — every 25 levels: +1 hour boost AND +2 spins
+  if (lvl % 25 === 0) {
+    STATE.starterBoostUntil = Math.max(STATE.starterBoostUntil || 0, Date.now() + 60 * 60 * 1000);
+    STATE.bonusWheelSpins = (STATE.bonusWheelSpins || 0) + 2;
+    rewards.push({ icon: '🌟', text: 'MILESTONE: +1 hour boost AND +2 wheel spins' });
+    confettiCount = 80;
+  }
+
+  // Apply coin reward in one go
+  addCoins(totalBonus);
+
+  // Headline toast first
+  toast(`🎉 LEVEL UP! Now Level ${lvl}`, '🆙');
+  // Stagger reward toasts so the player can read them
+  rewards.forEach((r, i) => {
+    setTimeout(() => toast(r.text, r.icon), 300 + i * 600);
+  });
+
+  // Confetti — bigger for bigger milestones
+  for (let i = 0; i < confettiCount; i++) {
+    setTimeout(() => spawnConfetti(), i * 25);
+  }
+
+  // Refresh UI elements that depend on these rewards
+  updateBoostIndicator();
+  updateHUD();
+
   // Update coin tier visuals (with celebration if tier changed)
   applyTierVisuals(true);
 }
@@ -4426,8 +4812,8 @@ function renderThemeCollection(list) {
 
   const sections = [
     { tier: 'free',    label: 'FREE THEMES',    icon: '🌍', priceTag: 'Free' },
-    { tier: 'starter', label: 'STARTER THEMES', icon: '🛂', priceTag: '$1.99' },
-    { tier: 'legend',  label: 'LEGEND THEMES',  icon: '👑', priceTag: '$2.99' }
+    { tier: 'starter', label: 'STARTER THEMES', icon: '🛂', priceTag: '$0.99' },
+    { tier: 'legend',  label: 'LEGEND THEMES',  icon: '👑', priceTag: '$3.99' }
   ];
 
   sections.forEach(sec => {
@@ -4524,7 +4910,7 @@ function renderThemeCollection(list) {
         cta.innerHTML = `
           <p>Unlock all ${themes.length} ${isLegend ? 'legendary' : 'city'} themes with the ${isLegend ? 'Legend' : 'Starter'} pack</p>
           <button class="${sec.tier}" data-open-pack="${sec.tier}">
-            ${isLegend ? '👑 Become Legend $2.99' : '🌍 Unlock Worlds $1.99'}
+            ${isLegend ? '👑 Become Legend $3.99' : '🌍 Unlock Worlds $0.99'}
           </button>
         `;
         list.appendChild(cta);
@@ -4846,12 +5232,12 @@ const PACKS = {
     id: 'starter',
     name: 'Starter World Pack',
     icon: '🌍',
-    price: 1.99,
-    priceLabel: '$1.99',
+    price: 0.99,
+    priceLabel: '$0.99',
     tagline: 'Best for travelers 🌍',
     headline: 'Travel the world instantly!',
     ribbon: 'POPULAR',
-    buttonLabel: 'Unlock Worlds $1.99',
+    buttonLabel: 'Unlock Worlds $0.99',
     themes: ['dubai', 'tokyo', 'newyork', 'paris'],
     features: [
       'Dubai Luxury 🇦🇪',
@@ -4868,12 +5254,12 @@ const PACKS = {
     id: 'legend',
     name: 'Legend Multiverse Pack',
     icon: '👑',
-    price: 2.99,
-    priceLabel: '$2.99',
+    price: 3.99,
+    priceLabel: '$3.99',
     tagline: 'Best for VIP players 👑',
     headline: 'Own impossible worlds.',
     ribbon: 'BEST',
-    buttonLabel: 'Become Legend $2.99',
+    buttonLabel: 'Become Legend $3.99',
     themes: ['dragon', 'cyberpunk', 'galaxy', 'atlantis', 'inferno'],
     features: [
       'Dragon Empire 🐉',
@@ -4933,6 +5319,7 @@ function applyStarterPack() {
 function applyLegendPack() {
   if (STATE.legendPackPurchased) return false;
   applyStarterPack();
+  
   STATE.legendPackPurchased = true;
   STATE.packType = 'legend';
 
@@ -4982,7 +5369,9 @@ function applyLegendPack() {
 //    NOT SECURE — for testing UI only.
 // 3. No Firebase: applies locally to localStorage. DEMO ONLY.
 async function secureUnlockPack(packId, orderID) {
-  // ===== MODE 1: Production with backend =====
+  const isLivePayPal = window.PAYPAL_CLIENT_ID && window.PAYPAL_CLIENT_ID !== 'sb';
+
+  // ===== PRODUCTION: backend verifies with PayPal + writes Firestore =====
   if (window.BACKEND_URL && Auth.currentUser) {
     try {
       const idToken = await Auth.currentUser.getIdToken();
@@ -4996,28 +5385,43 @@ async function secureUnlockPack(packId, orderID) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Verification failed (HTTP ' + res.status + ')');
+        // Surface the most informative server message we can. This covers:
+        //   - PayPal verification failures (amount/order mismatch)
+        //   - Firestore write failures (rules / quota / connectivity)
+        const reason = err.error || ('Verification failed (HTTP ' + res.status + ')');
+        throw new Error(reason);
       }
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Payment not verified');
       // Apply state from server (Firestore snapshot listener will also fire)
       Object.assign(STATE, data.userState);
+      reconcilePackEntitlements();
       onPackUnlocked(packId);
       saveGame();
       return true;
     } catch(err) {
-      console.error('Backend verification failed:', err);
-      showPackFail(err.message);
+      console.error('[Pack] backend verification failed:', err);
+      const msg = (err && err.message) || 'Verification failed';
+      // When running with a LIVE PayPal ID we MUST refuse to fall through to
+      // local-apply — that would hand out the pack for free.
+      showPackFail('Could not unlock pack: ' + msg + '. If your card was charged, sign in again to restore the purchase.');
       return false;
     }
   }
 
-  // ===== MODE 2 / 3: Demo path =====
-  console.warn('[DEMO MODE] No backend configured. Applying pack client-side. ' +
-               'In production, set window.BACKEND_URL and deploy paypal_backend_template.js.');
+  // ===== SANDBOX-ONLY local fallback =====
+  // Only allowed when running with the literal 'sb' sandbox token. Refuse for
+  // any real client ID so we never award a pack for free in production.
+  if (isLivePayPal) {
+    console.error('[Pack] Refusing to apply pack locally — live PayPal but no backend/auth.');
+    showPackFail('Cannot complete purchase: please sign in and ensure you are connected, then try again.');
+    return false;
+  }
+
+  console.warn('[DEMO MODE] No backend / sandbox token — applying pack client-side.');
   let applied = false;
-  if (packId === 'starter') applied = applyStarterPack();
-  else if (packId === 'legend') applied = applyLegendPack();
+  if (packId === 'starter')      applied = applyStarterPack();
+  else if (packId === 'legend')  applied = applyLegendPack();
   if (applied) {
     saveGame();
     if (Auth.currentUser) await Auth.saveProgress();
@@ -5030,6 +5434,7 @@ async function secureUnlockPack(packId, orderID) {
 }
 
 function onPackUnlocked(packId) {
+  reconcilePackEntitlements();
   const pack = PACKS[packId];
   document.getElementById('packSuccessName').textContent = pack.name + ' UNLOCKED!';
   document.getElementById('packSuccessDesc').textContent = `Pack unlocked successfully! All ${pack.features.length} rewards added to your account.`;
@@ -5039,6 +5444,8 @@ function onPackUnlocked(packId) {
   for (let i = 0; i < 50; i++) setTimeout(() => spawnConfetti(), i * 25);
   // Apply pack-side effects to UI
   applyPackUIEffects();
+  renderPacks();
+  if (typeof renderSkins === 'function') renderSkins();
   updateHUD();
 }
 
@@ -5104,10 +5511,16 @@ function openPayPalCheckout(packId) {
   }
 
   // Check if PayPal is configured
-  if (window.PAYPAL_CLIENT_ID === 'YOUR_PAYPAL_LIVE_CLIENT_ID' || !window.PAYPAL_CLIENT_ID) {
-    showPackFail('Payment not yet configured. Please try again later.');
-    return;
-  }
+ if (
+  !window.PAYPAL_CLIENT_ID ||
+  window.PAYPAL_CLIENT_ID === 'YOUR_PAYPAL_LIVE_CLIENT_ID' ||
+  !window.BACKEND_URL
+) {
+  console.log("PAYPAL_CLIENT_ID:", window.PAYPAL_CLIENT_ID);
+  console.log("BACKEND_URL:", window.BACKEND_URL);
+  showPackFail('Payment not configured. Check PayPal Client ID and Backend URL.');
+  return;
+}
 
   _paypalPackId = packId;
   document.getElementById('paypalTitle').textContent    = pack.name;
@@ -5120,8 +5533,11 @@ function openPayPalCheckout(packId) {
   loadPayPalSDK(
     () => _renderPayPalButtons(packId, pack),
     (err) => {
+      console.error('[PayPal] SDK load error:', err);
       document.getElementById('paypal-button-container').innerHTML =
-        '<p style="color:#b91c1c;text-align:center;padding:20px;">⚠️ Payment failed to load. Check your connection.</p>';
+        '<p style="color:#b91c1c;text-align:center;padding:20px;">⚠️ Payment system failed to load. Check your internet connection and try again.</p>';
+      // Also surface a toast so the message is visible if the overlay closes
+      toast('PayPal failed to load — try again', '⚠️');
     }
   );
 }
@@ -5152,27 +5568,32 @@ function _renderPayPalButtons(packId, pack) {
         document.getElementById('paypal-button-container').innerHTML =
           '<div style="text-align:center;padding:20px;color:#16a34a;font-weight:700;">✓ Payment approved — unlocking…</div>';
         try {
-          // Backend verifies + captures + updates Firestore. Never trust client-only.
-         if (window.PAYPAL_CLIENT_ID === 'sb') {
-  if (packId === 'starter') applyStarterPack();
-  if (packId === 'legend') applyLegendPack();
-
-  saveGame();
-  onPackUnlocked(packId);
-} else {
-  const order = await actions.order.capture();
-  await secureUnlockPack(packId, data.orderID || order.id);
-}
+          // Sandbox test mode (only when client ID literally equals 'sb')
+          if (window.PAYPAL_CLIENT_ID === 'sb') {
+            if (packId === 'starter') applyStarterPack();
+            if (packId === 'legend')  applyLegendPack();
+            saveGame();
+            onPackUnlocked(packId);
+          } else {
+            // LIVE: capture the payment, then have the backend verify with PayPal
+            // and write the entitlement to Firestore. Never trust the client.
+            const order = await actions.order.capture();
+            await secureUnlockPack(packId, data.orderID || order.id);
+          }
           document.getElementById('paypalOverlay').classList.remove('active');
         } catch(e) {
-          console.error("PayPal error:", e); 
-          showPackFail('Payment capture failed. Please contact support.');
+          console.error('[PayPal] capture/verify error:', e);
+          // Distinguish capture-side errors vs server verify-side errors so the
+          // user sees the real reason (Firestore save failure surfaces here too).
+          const msg = (e && e.message) ? e.message : 'Payment capture failed.';
+          showPackFail(msg + ' If you were charged, contact support — your purchase will be restored on next sign-in.');
           document.getElementById('paypalOverlay').classList.remove('active');
         }
       },
 
       onError: (err) => {
-        showPackFail('A PayPal error occurred. Please try again.');
+        console.error('[PayPal] onError:', err);
+        showPackFail('PayPal payment failed. Please try again or use a different payment method.');
         document.getElementById('paypalOverlay').classList.remove('active');
       },
 
@@ -5299,7 +5720,11 @@ function renderPacks() {
   c.querySelectorAll('[data-buy]').forEach(b => {
     b.onclick = () => {
       Audio.tap();
-      openPayPalCheckout(b.dataset.buy);
+      if (!window.BACKEND_URL) {
+  showPackFail('Backend URL not configured.');
+  return;
+}
+  openPayPalCheckout(b.dataset.buy);
     };
   });
   document.getElementById('btnRestorePurchases').onclick = restorePurchases;
@@ -5323,8 +5748,11 @@ async function restorePurchases() {
       const data = await res.json();
       if (data.success) {
         Object.assign(STATE, data.userState || {});
+        reconcilePackEntitlements();
         saveGame();
         renderPacks();
+        if (typeof renderSkins === 'function') renderSkins();
+        applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
         updateHUD();
         updateBoostIndicator();
         toast('Purchases restored!', '✅');
@@ -5340,15 +5768,14 @@ async function restorePurchases() {
   if (Auth.currentUser) {
     const cloud = await Auth.loadFromCloud();
     if (cloud) {
-      ['packType', 'starterPackPurchased', 'legendPackPurchased',
-       'starterBoostUntil', 'adsRemovedUntil', 'permanentAdsRemoved',
-       'tapIncomeMultiplier', 'autoIncomeMultiplier',
-       'offlineEarningLimitHours', 'bonusWheelSpins', 'badge',
-       'goldenButtonChanceMult'].forEach(k => {
+      PACK_FIELD_KEYS.forEach(k => {
         if (cloud[k] !== undefined) STATE[k] = cloud[k];
       });
+      reconcilePackEntitlements();
       saveGame();
       renderPacks();
+      if (typeof renderSkins === 'function') renderSkins();
+      applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
       updateHUD();
       updateBoostIndicator();
     }
@@ -5547,6 +5974,7 @@ const Auth = {
   syncInterval: null,
   unsubscribe: null,
   isSyncing: false,
+  suppressNextSignedOutModal: false,
 
   isReady() { return !!window.FIREBASE_READY; },
 
@@ -5564,25 +5992,37 @@ const Auth = {
     return cred.user;
   },
 
-  signInGoogle() {
-    // NOT async — popup must be called synchronously from the click handler (iOS Safari).
-    if (!this.isReady()) return Promise.reject(new Error('Firebase not configured'));
+  async signInGoogle() {
+    if (!this.isReady()) throw new Error('Firebase not configured');
     const fns = window.firebaseFns;
     const provider = new fns.GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
-    return fns.signInWithPopup(window.firebaseAuth, provider)
-      .then(cred => cred.user)
-      .catch(e => {
-        // User explicitly cancelled — surface that, don't redirect
-        if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
-          throw new Error('Sign-in was cancelled');
-        }
-        // Any other popup failure (blocked, internal error, unsupported env, etc.)
-        // → fall back to redirect, which works on all browsers
-        console.warn('[Auth] Popup failed (' + (e.code || e.message) + '), falling back to redirect');
-        return fns.signInWithRedirect(window.firebaseAuth, provider).then(() => null);
-      });
+    // Popup first — works in all modern browsers without depending on
+    // third-party cookies surviving the redirect round-trip through
+    // accounts.google.com → firebaseapp.com → back to our domain.
+    // (The old redirect-only flow broke because most browsers now block
+    // those third-party cookies, so getRedirectResult returned null and
+    // onAuthStateChanged never received the signed-in user.)
+    try {
+      const result = await fns.signInWithPopup(window.firebaseAuth, provider);
+      console.log('[Auth] popup sign-in succeeded:', result.user.email);
+      return result.user;
+    } catch (e) {
+      const code = e && e.code;
+      // Browsers that block popups, embedded webviews, or no-window contexts
+      // → fall back to redirect. The page navigates away; getRedirectResult
+      // in initAuth() picks it up on return.
+      if (code === 'auth/popup-blocked' ||
+          code === 'auth/popup-closed-by-user' ||
+          code === 'auth/cancelled-popup-request' ||
+          code === 'auth/operation-not-supported-in-this-environment') {
+        console.warn('[Auth] popup unavailable, falling back to redirect:', code);
+        await fns.signInWithRedirect(window.firebaseAuth, provider);
+        return null;
+      }
+      throw e;
+    }
   },
 
   async resetPassword(email) {
@@ -5592,9 +6032,17 @@ const Auth = {
 
   async signOut() {
     if (!this.isReady()) return;
+    this.suppressNextSignedOutModal = true;
     if (this.unsubscribe) { this.unsubscribe(); this.unsubscribe = null; }
     if (this.syncInterval) { clearInterval(this.syncInterval); this.syncInterval = null; }
-    await window.firebaseFns.signOut(window.firebaseAuth);
+    try {
+      await window.firebaseFns.signOut(window.firebaseAuth);
+    } catch (e) {
+      console.warn('Firebase signOut error:', e);
+    }
+    // Defensive: reset state directly so UI updates immediately, even if
+    // the onAuthStateChanged listener fires late or never fires.
+    onUserSignedOut(true);
   },
 
   // Save the player's progress to Firestore (the parts they own client-side)
@@ -5606,6 +6054,7 @@ const Auth = {
       const fns = window.firebaseFns;
       const ref = fns.doc(window.firebaseDB, 'users', this.currentUser.uid, 'progress', 'gameState');
       // Only save the non-sensitive game state — pack/badge fields are server-controlled
+      reconcilePackEntitlements();
       const progress = {
         coins: STATE.coins,
         totalCoins: STATE.totalCoins,
@@ -5621,7 +6070,6 @@ const Auth = {
         upgrades: STATE.upgrades,
         auto: STATE.auto,
         ownedSkins: STATE.ownedSkins,
-        ownedThemes: STATE.ownedThemes,
         equippedSkin: STATE.equippedSkin,
         equippedTheme: STATE.equippedTheme,
         lastSeen: Date.now(),
@@ -5654,21 +6102,16 @@ const Auth = {
       ]);
 
       // Merge: server-controlled pack fields take precedence
-      const cloudData = {};
-      if (progressSnap.exists()) Object.assign(cloudData, progressSnap.data());
+      const cloudData = getDefaultPackFields();
+      if (progressSnap.exists()) Object.assign(cloudData, sanitizeCloudProgress(progressSnap.data()));
       if (userSnap.exists()) {
         const u = userSnap.data();
         // Pack/badge fields are SERVER-CONTROLLED. Always trust the server doc.
-        ['packType', 'starterPackPurchased', 'legendPackPurchased',
-         'starterBoostUntil', 'adsRemovedUntil', 'permanentAdsRemoved',
-         'tapIncomeMultiplier', 'autoIncomeMultiplier',
-         'offlineEarningLimitHours', 'bonusWheelSpins', 'badge',
-         'goldenButtonChanceMult'].forEach(k => {
+        PACK_FIELD_KEYS.forEach(k => {
           if (u[k] !== undefined) cloudData[k] = u[k];
         });
       }
-      // Return null for new users (no documents yet) so saveProgress() initialises their record
-      return Object.keys(cloudData).length > 0 ? cloudData : null;
+      return cloudData;
     } catch(e) {
       console.warn('Cloud load failed:', e);
       return null;
@@ -5686,11 +6129,7 @@ const Auth = {
       const u = snap.data();
       let changed = false;
       // Apply server-side pack fields if changed
-      ['packType', 'starterPackPurchased', 'legendPackPurchased',
-       'starterBoostUntil', 'adsRemovedUntil', 'permanentAdsRemoved',
-       'tapIncomeMultiplier', 'autoIncomeMultiplier',
-       'offlineEarningLimitHours', 'bonusWheelSpins', 'badge',
-       'goldenButtonChanceMult'].forEach(k => {
+      PACK_FIELD_KEYS.forEach(k => {
         if (u[k] !== undefined && JSON.stringify(STATE[k]) !== JSON.stringify(u[k])) {
           STATE[k] = u[k];
           changed = true;
@@ -5704,9 +6143,13 @@ const Auth = {
         changed = true;
       }
       if (changed) {
+        reconcilePackEntitlements();
         updateHUD();
         updateBoostIndicator();
         applyTierVisuals(false);
+        applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
+        renderPacks();
+        if (typeof renderSkins === 'function') renderSkins();
         saveGame();
       }
     });
@@ -5720,7 +6163,7 @@ const Auth = {
     }, 30000);
   }
 };
-
+window.Auth = Auth;
 function updateSyncIndicator(status) {
   const el = document.getElementById('syncIndicator');
   if (!el) return;
@@ -5738,8 +6181,36 @@ function updateSyncIndicator(status) {
 // =================================================================
 async function onUserSignedIn(user) {
   Auth.currentUser = user;
+  Auth._signedOutReset = false;
   STATE.userId = user.uid;
   STATE.email = user.email;
+
+  // Save or update the Firebase user profile document.
+  // This creates: Firestore → users → {user.uid}
+  try {
+    const fns = window.firebaseFns;
+    const userRef = fns.doc(window.firebaseDB, 'users', user.uid);
+    const userSnap = await fns.getDoc(userRef);
+
+    const profileData = {
+      uid: user.uid,
+      email: user.email || '',
+      name: user.displayName || '',
+      photoURL: user.photoURL || '',
+      provider: (user.providerData && user.providerData[0] && user.providerData[0].providerId) || 'google.com',
+      lastLoginAt: fns.serverTimestamp()
+    };
+
+    // Only set createdAt on first login, so it does not reset every time.
+    if (!userSnap.exists()) {
+      profileData.createdAt = fns.serverTimestamp();
+    }
+
+    await fns.setDoc(userRef, profileData, { merge: true });
+  } catch (e) {
+    console.warn('User profile save failed:', e);
+    toast('Signed in, but profile save failed. Check Firestore rules.', '⚠️');
+  }
 
   toast(`Welcome, ${user.displayName || user.email || 'Player'}!`, '👋');
   updateAuthUI();
@@ -5757,22 +6228,14 @@ async function onUserSignedIn(user) {
       toast('Cloud progress restored!', '☁️');
     } else if (localTotal > cloudTotal) {
       // Local is ahead → keep local but inherit pack fields from cloud
-      ['packType', 'starterPackPurchased', 'legendPackPurchased',
-       'starterBoostUntil', 'adsRemovedUntil', 'permanentAdsRemoved',
-       'tapIncomeMultiplier', 'autoIncomeMultiplier',
-       'offlineEarningLimitHours', 'bonusWheelSpins', 'badge',
-       'goldenButtonChanceMult'].forEach(k => {
+      PACK_FIELD_KEYS.forEach(k => {
         if (cloud[k] !== undefined) STATE[k] = cloud[k];
       });
       toast('Local progress kept; packs synced from cloud', '🔄');
       await Auth.saveProgress();
     } else {
       // Equal or cloud empty: just adopt cloud's pack fields
-      ['packType', 'starterPackPurchased', 'legendPackPurchased',
-       'starterBoostUntil', 'adsRemovedUntil', 'permanentAdsRemoved',
-       'tapIncomeMultiplier', 'autoIncomeMultiplier',
-       'offlineEarningLimitHours', 'bonusWheelSpins', 'badge',
-       'goldenButtonChanceMult'].forEach(k => {
+      PACK_FIELD_KEYS.forEach(k => {
         if (cloud[k] !== undefined) STATE[k] = cloud[k];
       });
     }
@@ -5780,6 +6243,8 @@ async function onUserSignedIn(user) {
     // First time login — push current state to cloud
     await Auth.saveProgress();
   }
+
+  reconcilePackEntitlements();
 
   // Re-apply visuals after merge
   const skinObj = SKINS.find(s => s.id === STATE.equippedSkin) || SKINS[0];
@@ -5798,11 +6263,23 @@ async function onUserSignedIn(user) {
   Auth.startAutoSync();
   updateSyncIndicator('synced');
 
-  // Close auth modal if open
-  document.getElementById('modalAuth').classList.remove('active');
+  // Re-render the auth modal so an open one flips to the signed-in profile
+  // view immediately (no more stale "Continue with Google" button).
+  const authModal = document.getElementById('modalAuth');
+  if (authModal && authModal.classList.contains('active')) {
+    renderAuthModal();
+  }
 }
 
-function onUserSignedOut() {
+function onUserSignedOut(resetLocalState = false) {
+  // Idempotent: if we already reset state for this sign-out, don't redo it.
+  // Both Auth.signOut() and the onAuthStateChanged listener call this — the
+  // second invocation should be a no-op so we don't double-render mid-render.
+  if (Auth._signedOutReset && resetLocalState) {
+    updateAuthUI();
+    updateSyncIndicator('offline');
+    return;
+  }
 
   Auth.currentUser = null;
   STATE.userId = null;
@@ -5818,37 +6295,43 @@ function onUserSignedOut() {
     Auth.syncInterval = null;
   }
 
+  if (!resetLocalState) {
+    updateAuthUI();
+    updateSyncIndicator('offline');
+    if (document.getElementById('modalAuth').classList.contains('active')) renderAuthModal();
+    return;
+  }
+
   localStorage.removeItem(SAVE_KEY);
   localStorage.removeItem('tapTycoonSave');
   localStorage.removeItem('tap-tycoon-save');
   localStorage.removeItem('purchasedPacks');
   localStorage.removeItem('ownedPacks');
- 
-  Object.assign(STATE, getDefaultState());
 
-  STATE.pack = 'free';
-  STATE.ownedPacks = [];
-  STATE.unlockedSkins = [];
-  STATE.unlockedThemes = [];
-  STATE.currentSkin = null;
-  STATE.currentTheme = null;
-
+  replaceState(getDefaultState());
+  reconcilePackEntitlements();
   saveGame();
-  
+  Auth._signedOutReset = true;
+
+  const skinObj = SKINS.find(s => s.id === STATE.equippedSkin) || SKINS[0];
+  document.getElementById('tapFace').textContent = skinObj.id;
+  document.getElementById('tapBtn').style.background = '';
+  applyTheme(THEMES.find(t => t.id === STATE.equippedTheme) || THEMES[0]);
+  applyTierVisuals(false);
+
   updateAuthUI();
   updateHUD();
   renderPacks();
 
+  // Force re-render of theme/skin grids so cached "owned" closures are
+  // replaced with the new locked state.
   if (typeof renderSkins === 'function') renderSkins();
-  if (typeof renderThemes === 'function') renderThemes();
 
   updateBoostIndicator();
   updateSyncIndicator('offline');
+  if (document.getElementById('modalAuth').classList.contains('active')) renderAuthModal();
 }
 
-// =================================================================
-// AUTH MODAL UI
-// =================================================================
 function openAuthModal() {
   document.getElementById('modalAuth').classList.add('active');
   renderAuthModal();
@@ -5907,8 +6390,15 @@ function renderAuthModal() {
       setTimeout(() => { btn.textContent = '☁️ Sync to Cloud Now'; btn.disabled = false; }, 1500);
     };
     document.getElementById('btnSignOut').onclick = async () => {
-      if (!confirm('Sign out? Your progress will stay on this device.')) return;
-      await Auth.signOut();
+      if (!confirm('Sign out? This device will return to a free guest profile until you sign in again.')) return;
+      try {
+        await Auth.signOut();
+      } catch (e) {
+        console.error('[Auth] sign-out error:', e);
+      }
+      // Re-render so the modal flips back to the "Sign in with Google" view
+      // before we close it (in case the user reopens it quickly).
+      renderAuthModal();
       document.getElementById('modalAuth').classList.remove('active');
       toast('Signed out', '👋');
     };
@@ -5924,7 +6414,7 @@ function renderAuthModal() {
       </p>
     </div>
     <div class="auth-error" id="authError"></div>
-    <button class="auth-google" id="btnGoogle" style="width:100%; justify-content:center; padding:14px 20px; font-size:15px;">
+    <button class="auth-google" id="btnGoogle" style="width:100%; justify-content:center; padding:14px 20px; font-size:15px;" ${!Auth.isReady() ? 'disabled' : ''}>
       <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5h-1.9V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.5-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.3 2.4-5.2 0-9.6-3.3-11.2-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5h-1.9V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6.2 5.2C40.7 35.9 44 30.5 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
       Continue with Google
     </button>
@@ -5943,39 +6433,23 @@ function clearAuthError() {
   if (e) e.classList.remove('show');
 }
 
-function handleGoogleSignIn() {
-  // NOT async — iOS Safari only allows popups from synchronous user-gesture handlers.
+async function handleGoogleSignIn() {
   clearAuthError();
   const btn = document.getElementById('btnGoogle');
-
-  if (!Auth.isReady()) {
-    // Firebase still loading — show feedback and retry once it's ready
-    if (btn) { btn.disabled = true; btn.textContent = '⟲ Loading...'; }
-    const t = setTimeout(() => {
-      if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
-      showAuthError('Connection timed out — please try again.');
-    }, 8000);
-    window.addEventListener('firebase-ready', () => {
-      clearTimeout(t);
-      if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
-    }, { once: true });
-    return;
+  if (btn) { btn.disabled = true; btn.textContent = '⟲ Signing in...'; }
+  try {
+    const user = await Auth.signInGoogle();
+    // If popup succeeded, `user` is set and onAuthStateChanged will fire and
+    // re-render the modal. If null, we fell back to redirect — the page is
+    // about to navigate away, so leave the button disabled.
+    if (!user) return;
+  } catch(e) {
+    console.error('[Auth] sign-in error:', e);
+    const msg = (e.message || 'Sign-in failed. Try again.')
+      .replace(/^Firebase: /, '').replace(/ \(auth\/[^)]+\)\.$/, '');
+    showAuthError(msg);
+    if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
   }
-
-  if (btn) { btn.disabled = true; btn.textContent = '⟲ Opening Google...'; }
-
-  // Synchronous call from click handler — user-gesture context intact for popup
-  Auth.signInGoogle()
-    .then(user => {
-      if (!user) return; // redirect path — page is navigating away
-      // popup path: onAuthStateChanged fires and calls onUserSignedIn automatically
-    })
-    .catch(e => {
-      const msg = (e.message || 'Sign-in failed. Try again.')
-        .replace(/^Firebase: /, '').replace(/ \(auth\/[^)]+\)\.$/, '');
-      showAuthError(msg);
-      if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
-    });
 }
 
 function updateAuthUI() {
@@ -5999,68 +6473,97 @@ function initAuth() {
     return;
   }
 
-  // We must wait for BOTH getRedirectResult AND onAuthStateChanged to resolve
-  // before deciding to open the auth modal. Either one could arrive first.
-  // (Avoids the "modal flashes open then immediately closes after Google redirect" bug.)
-  let redirectDone = false;
-  let authStateDone = false;
+  // Always block the "signed out" path until getRedirectResult has settled.
+  //
+  // WHY: On every page load Firebase fires onAuthStateChanged(null) before it
+  // has finished resolving a pending OAuth redirect.  The old approach relied on
+  // a sessionStorage flag set before signInWithRedirect, but that flag does NOT
+  // reliably survive the cross-origin round-trip through firebaseapp.com —
+  // so the null event was processed, onUserSignedOut() was called, and the
+  // console logged "[Auth] signed out" immediately after the OAuth flow.
+  //
+  // By starting with redirectBlocking=true we ignore every null auth event
+  // until getRedirectResult() resolves (usually <200 ms on a normal load when
+  // there is no pending redirect, or when the redirect completes successfully).
+  sessionStorage.removeItem('pendingGoogleRedirect'); // clean up legacy flag
+  let redirectBlocking = true;
 
-  const maybeSetOffline = () => {
-    if (redirectDone && authStateDone && !Auth.currentUser) {
-      onUserSignedOut();
-      // Don't auto-open the modal — user opens it themselves via the account button.
-    }
-  };
-
-  // Always call getRedirectResult — it completes any in-progress redirect sign-in.
+  // getRedirectResult either:
+  //  a) Returns the signed-in user (redirect just completed) — onAuthStateChanged
+  //     will fire with that user right after, so we just drop the block.
+  //  b) Returns null (no pending redirect, normal page load) — drop the block
+  //     so subsequent explicit sign-outs work normally.
+  //  c) Throws (e.g. unauthorized-domain) — drop the block and surface the error.
   window.firebaseFns.getRedirectResult(window.firebaseAuth)
-    .then(result => {
-      redirectDone = true;
-      if (result && result.user) {
-        console.log('[Auth] Redirect sign-in completed for', result.user.email);
-      }
-      maybeSetOffline();
+    .then(() => {
+      redirectBlocking = false;
     })
     .catch(e => {
-      redirectDone = true;
-      console.error('[Auth] getRedirectResult error:', e.code, e.message);
-      const code = e.code || '';
-      const domain = location.hostname;
-      if (code.includes('unauthorized-domain')) {
-        // This is the most common deployment error — tell user exactly what to add
-        toast('Add "' + domain + '" to Firebase Console → Auth → Authorized domains', '❌');
-      } else if (code && code !== 'auth/null-user') {
-        toast('Sign-in error: ' + (e.code || e.message), '❌');
+      redirectBlocking = false;
+      console.error('[Auth] getRedirectResult error:', e);
+      if ((e.code || '').includes('unauthorized-domain')) {
+        toast('Add your site URL to Firebase Auth → Authorized domains', '❌');
       }
-      maybeSetOffline();
+      // If the redirect failed and nobody is signed in, open the sign-in modal.
+      if (!Auth.currentUser) { onUserSignedOut(false); openAuthModal(); }
     });
 
   window.firebaseFns.onAuthStateChanged(window.firebaseAuth, (user) => {
     if (user) {
-      authStateDone = true;
-      console.log('[Auth] onAuthStateChanged: signed in as', user.email);
-      onUserSignedIn(user).catch(err => console.error('[Auth] onUserSignedIn error:', err));
+      console.log('[Auth] signed in:', user.email);
+      Auth.suppressNextSignedOutModal = false;
+      redirectBlocking = false; // user is confirmed — unblock immediately
+      onUserSignedIn(user).catch(e => {
+        console.error('[Auth] sign-in sync failed:', e);
+        Auth.currentUser = user;
+        Auth._signedOutReset = false;
+        STATE.userId = user.uid;
+        STATE.email = user.email;
+        updateAuthUI();
+        updateSyncIndicator('offline');
+        if (document.getElementById('modalAuth').classList.contains('active')) {
+          renderAuthModal();
+        }
+      });
     } else {
-      authStateDone = true;
-      console.log('[Auth] onAuthStateChanged: no user');
-      maybeSetOffline();
+      // Don't log "signed out" yet — null fires on every page load before
+      // getRedirectResult settles. Only log if we actually process it below.
+      if (!redirectBlocking) {
+        console.log('[Auth] signed out');
+        const explicitSignOut = Auth.suppressNextSignedOutModal;
+        onUserSignedOut(explicitSignOut);
+        if (explicitSignOut) {
+          Auth.suppressNextSignedOutModal = false;
+        } else {
+          openAuthModal();
+        }
+      } else {
+        console.log('[Auth] null auth state — waiting for redirect result');
+      }
     }
   });
 }
 
-if (window.FIREBASE_READY) {
+// Start the single auth listener (initAuth handles redirect result + onAuthStateChanged).
+if (window.FIREBASE_READY && window.firebaseFns && window.firebaseAuth) {
   initAuth();
 } else {
-  // Wait for Firebase to load (or fail to load)
-  window.addEventListener('firebase-ready', initAuth);
-  // After 3 seconds, give up and run offline
-  setTimeout(() => { if (!Auth.currentUser && !window.FIREBASE_READY) updateSyncIndicator('offline'); }, 3000);
+  window.addEventListener('firebase-ready', initAuth, { once: true });
 }
 
-document.getElementById('btnAccount').addEventListener('click', () => {
-  Audio.init(); Audio.tap();
-  openAuthModal();
-});
+// keep your offline indicator
+setTimeout(() => {
+  if (!Auth.currentUser && !window.FIREBASE_READY) updateSyncIndicator("offline");
+}, 3000);
+const btnAccount = document.getElementById('btnAccount');
+
+if (btnAccount) {
+  btnAccount.addEventListener('click', () => {
+    Audio.init(); 
+    Audio.tap();
+    openAuthModal();
+  });
+}
 
 // Save progress on page hide (for cloud sync)
 document.addEventListener('visibilitychange', () => {
@@ -6448,7 +6951,7 @@ document.getElementById('btnSound').onclick = (e) => {
 // Reset
 document.getElementById('btnReset').onclick = () => {
   if (!confirm('Reset all progress? This cannot be undone!')) return;
-  localStorage.removeItem('tapTycoon');
+  localStorage.removeItem(SAVE_KEY);
   location.reload();
 };
 
@@ -6468,12 +6971,12 @@ tapBtn.addEventListener('pointerdown', e => {
 
 // ---------- SAVE / LOAD ----------
 function saveGame() {
-  try { localStorage.setItem('tapTycoon', JSON.stringify(STATE)); } catch(e) {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(STATE)); } catch(e) {}
 }
 
 function loadGame() {
   try {
-    const raw = localStorage.getItem('tapTycoon');
+    const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return false;
     const data = JSON.parse(raw);
     Object.assign(STATE, data);
@@ -6491,6 +6994,7 @@ function loadGame() {
     if (!validThemeIds.includes(STATE.equippedTheme)) {
       STATE.equippedTheme = 'default';
     }
+    reconcilePackEntitlements();
     return true;
   } catch(e) { return false; }
 }
@@ -6584,5 +7088,7 @@ document.addEventListener('visibilitychange', () => {
 
 init();
 </script>
+
+  
 </body>
 </html>

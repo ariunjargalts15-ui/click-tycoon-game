@@ -149,7 +149,8 @@ async function applyPackToUser(userId, email, packId, orderID, captureID) {
       goldenButtonChanceMult: 1,
     };
 
-    if (packId === 'starter' && user.starterPackPurchased)
+    // Legend includes Starter — owning Legend blocks starter repurchase.
+    if (packId === 'starter' && (user.starterPackPurchased || user.legendPackPurchased))
       throw new Error('ALREADY_OWNS_STARTER');
     if (packId === 'legend'  && user.legendPackPurchased)
       throw new Error('ALREADY_OWNS_LEGEND');
@@ -172,11 +173,21 @@ async function applyPackToUser(userId, email, packId, orderID, captureID) {
       user.adsRemovedUntil          = Math.max(user.adsRemovedUntil || 0, now + r.adRemoveHours * 3600 * 1000);
       if (user.badge !== 'legend') user.badge = r.badge;
     } else {
+      // Legend pack supersedes Starter — also grant starter content/perks
+      // so legend buyers get the full starter pack as well.
+      if (!user.starterPackPurchased) {
+        const s = PACK_REWARDS.starter;
+        user.starterPackPurchased = true;
+        s.themesToAdd.forEach(t => { if (!user.ownedThemes.includes(t)) user.ownedThemes.push(t); });
+        s.skinsToAdd.forEach(sk => { if (!user.ownedSkins.includes(sk)) user.ownedSkins.push(sk); });
+        user.starterBoostUntil = Math.max(user.starterBoostUntil || 0, now + s.starterBoostHours * 3600 * 1000);
+        user.adsRemovedUntil   = Math.max(user.adsRemovedUntil   || 0, now + s.adRemoveHours    * 3600 * 1000);
+      }
       user.legendPackPurchased   = true;
       user.packType              = 'legend';
       user.tapIncomeMultiplier   = r.permanentTapMult;
       user.autoIncomeMultiplier  = r.permanentAutoMult;
-      user.offlineEarningLimitHours = r.offlineHours;
+      user.offlineEarningLimitHours = Math.max(user.offlineEarningLimitHours || 2, r.offlineHours);
       user.permanentAdsRemoved   = r.permanentAdsRemoved;
       user.bonusWheelSpins       = (user.bonusWheelSpins || 0) + r.bonusWheelSpins;
       user.goldenButtonChanceMult = r.goldenButtonChanceMult;
